@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Building Materials | Vaibhav Traders Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/animations.css">
+</head>
+<body class="admin-body">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-brand">
+      <div class="brand-icon-wrapper" style="width: 38px; height: 38px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M5 21V7l8-4v18M13 10h4v11"/></svg>
+      </div>
+      <div>
+        <div style="font-weight: 800; font-family: var(--font-family-heading); font-size: 1.1rem; line-height: 1.2;">VAIBHAV TRADERS</div>
+        <div style="font-size: 0.65rem; color: var(--color-accent); font-weight: bold; text-transform: uppercase;">Admin Portal</div>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="index.html" class="admin-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span>Dashboard Overview</span>
+      </a>
+
+      <a href="products.html" class="admin-nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span>Manage Materials</span>
+      </a>
+
+      <a href="leads.html" class="admin-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Customer Quotes / Leads</span>
+      </a>
+
+      <a href="settings.html" class="admin-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Website & CMS Settings</span>
+      </a>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+      <a href="../index.html" class="btn btn-outline btn-sm" style="color: #cbd5e1; border-color: #334155; justify-content: flex-start;">
+        &larr; View Live Website
+      </a>
+      <button id="adminLogoutBtn" class="btn btn-dark btn-sm" style="background: #1e293b; color: #f87171; justify-content: flex-start;">
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <header class="admin-topbar">
+      <div>
+        <h2 style="font-size: 1.35rem; margin-bottom: 0.15rem;">Product & Material Catalog Manager</h2>
+        <p style="font-size: 0.8rem; color: var(--color-text-muted); margin: 0;">Add, update prices, or toggle in-stock availability across the live customer website</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button id="btnResetDefaultProducts" class="btn btn-outline btn-sm" style="color: var(--color-text-muted);">
+          Reset Defaults
+        </button>
+        <button id="btnAddNewProduct" class="btn btn-primary btn-sm">
+          + Add New Material
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-content">
+      <div class="admin-table-card">
+        <div class="table-header-bar">
+          <div>
+            <h3 style="font-size: 1.15rem; margin: 0;">Active Catalog Items</h3>
+            <span style="font-size: 0.8rem; color: var(--color-text-muted);">Click status badge to toggle stock availability immediately</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width: 70px;">Photo</th>
+                <th>Material & Category</th>
+                <th>Supply Unit</th>
+                <th>Wholesale Rate</th>
+                <th>Stock Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminProductsTable">
+              <!-- Populated via admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Product Modal -->
+  <div id="productFormModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="productModalTitle" style="font-size: 1.25rem;">Add Building Material</h3>
+        <button id="closeProductModal" style="font-size: 1.5rem; line-height: 1; color: var(--color-text-muted);">&times;</button>
+      </div>
+      <form id="adminProductForm">
+        <input type="hidden" id="productIdField" value="">
+        <div class="modal-body">
+          <!-- Product Photo Upload / URL -->
+          <div class="form-group">
+            <label class="form-label">Material Photo / Image</label>
+            <div style="display: flex; gap: 0.85rem; align-items: center; margin-bottom: 0.5rem;">
+              <div id="productImagePreviewContainer" class="admin-prod-thumb-wrapper" style="width: 68px; height: 68px; border: 2px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted);">
+                <img id="productImagePreview" src="" alt="Preview" class="admin-prod-thumb" style="display: none;">
+                <span id="productImagePlaceholderIcon" style="font-size: 1.6rem; color: var(--color-text-muted);">📷</span>
+              </div>
+              <div style="flex-grow: 1;">
+                <input type="url" id="productImageUrl" name="productImage" class="form-control" placeholder="Paste image web link (e.g. https://...)" style="margin-bottom: 0.4rem; font-size: 0.85rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <label class="btn btn-outline btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.3rem 0.65rem;">
+                    📁 Upload from Device
+                    <input type="file" id="productImageFileInput" accept="image/*" style="display: none;">
+                  </label>
+                  <button type="button" id="btnClearProductImage" class="btn btn-sm" style="font-size: 0.75rem; color: var(--color-danger); padding: 0.3rem 0.5rem; background: none; border: none; cursor: pointer; display: none;">✕ Remove</button>
+                </div>
+              </div>
+            </div>
+            <small style="font-size: 0.75rem; color: var(--color-text-muted);">Upload a real photo from your computer/mobile or paste an image link.</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Material Name *</label>
+            <input type="text" name="productName" class="form-control" placeholder="e.g. UltraTech Cement 53 Grade" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select name="productCategory" class="form-control">
+              <option value="cement">Cement</option>
+              <option value="steel">TMT Steel</option>
+              <option value="sand-aggregate">Sand & Aggregates</option>
+              <option value="bricks-blocks">Bricks & Blocks</option>
+              <option value="plumbing-hardware">Plumbing & Hardware</option>
+              <option value="finishing-paints">Paints & Finishing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Supply Unit *</label>
+            <input type="text" name="productUnit" class="form-control" placeholder="e.g. Per Bag (50 Kg) / Per Brass / Per Ton" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Wholesale Rate Description</label>
+            <input type="text" name="productWholesale" class="form-control" placeholder="e.g. Live Mill Rate / ₹380 Bulk / Direct Tipper">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Stock Status</label>
+            <select name="productStock" class="form-control">
+              <option value="in-stock">In Stock (Available)</option>
+              <option value="low-stock">Inquire Stock (Custom Order)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="productDesc" class="form-control" placeholder="Specifications, brand highlights, or delivery requirements..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('productFormModal').classList.remove('active');">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Material &rarr;</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

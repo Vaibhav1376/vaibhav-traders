@@ -280,21 +280,39 @@ const VTAdmin = {
     }
 
     if (imgFileInput) {
-      imgFileInput.addEventListener('change', (e) => {
+      imgFileInput.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
-        if (file) {
-          if (file.size > 2 * 1024 * 1024) {
-            VTApp.showToast('Image size should be under 2MB for fast loading.', 'warning');
+        if (!file) return;
+
+        // Check if Supabase Cloud Storage is configured
+        if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+          VTApp.showToast('Uploading photo to Supabase Cloud Storage...', 'info');
+          const { publicUrl, error } = await window.VTSupabase.uploadProductImage(file);
+          if (publicUrl) {
+            if (imgUrlInput) imgUrlInput.value = publicUrl;
+            updatePreview(publicUrl);
+            VTApp.showToast('Photo uploaded to Supabase Storage successfully!', 'success');
+            return;
+          } else {
+            console.warn('Supabase upload issue:', error);
+            VTApp.showToast(`Supabase upload note: ${error.message || 'Check storage bucket'}. Using local preview.`, 'warning');
           }
-          const reader = new FileReader();
-          reader.onload = (loadEvent) => {
-            const dataUrl = loadEvent.target.result;
-            if (imgUrlInput) imgUrlInput.value = dataUrl;
-            updatePreview(dataUrl);
-            VTApp.showToast('Photo loaded successfully from device!', 'info');
-          };
-          reader.readAsDataURL(file);
         }
+
+        // Local fallback (Base64 Data URL)
+        if (file.size > 2 * 1024 * 1024) {
+          VTApp.showToast('Image size is over 2MB. Consider compressing or configuring Supabase.', 'warning');
+        }
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+          const dataUrl = loadEvent.target.result;
+          if (imgUrlInput) imgUrlInput.value = dataUrl;
+          updatePreview(dataUrl);
+          if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
+            VTApp.showToast('Photo loaded locally. Configure Supabase in Settings for permanent cloud hosting.', 'info');
+          }
+        };
+        reader.readAsDataURL(file);
       });
     }
 
@@ -599,6 +617,78 @@ const VTAdmin = {
           }
         };
         reader.readAsText(file);
+      });
+    }
+
+    // Supabase Cloud Storage Configuration Form
+    const supabaseForm = document.getElementById('supabaseConfigForm');
+    const urlInput = document.getElementById('supabaseUrlInput');
+    const keyInput = document.getElementById('supabaseAnonKeyInput');
+    const bucketInput = document.getElementById('supabaseBucketInput');
+    const statusBadge = document.getElementById('supabaseStatusBadge');
+    const testBtn = document.getElementById('btnTestSupabase');
+
+    const updateSupabaseBadge = () => {
+      if (!statusBadge) return;
+      if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+        statusBadge.className = 'badge badge-success';
+        statusBadge.textContent = '● Connected & Active';
+      } else {
+        statusBadge.className = 'badge badge-warning';
+        statusBadge.textContent = 'Not Connected';
+      }
+    };
+
+    if (window.VTSupabase) {
+      const cfg = window.VTSupabase.getConfig();
+      if (urlInput && cfg.url && !cfg.url.includes('your-project.supabase.co')) urlInput.value = cfg.url;
+      if (keyInput && cfg.anonKey) keyInput.value = cfg.anonKey;
+      if (bucketInput && cfg.bucketName) bucketInput.value = cfg.bucketName;
+      updateSupabaseBadge();
+    }
+
+    if (supabaseForm) {
+      supabaseForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const url = urlInput.value.trim();
+        const key = keyInput.value.trim();
+        const bucket = bucketInput.value.trim() || 'product-images';
+
+        if (!url || !key) {
+          VTApp.showToast('Please provide both Supabase Project URL and Anon API Key.', 'error');
+          return;
+        }
+
+        if (window.VTSupabase) {
+          window.VTSupabase.saveConfig(url, key, bucket);
+          updateSupabaseBadge();
+          VTApp.showToast('Supabase settings saved! Verifying connection...', 'info');
+          window.VTSupabase.testConnection().then(res => {
+            if (res.success) {
+              VTApp.showToast(res.message, 'success');
+              updateSupabaseBadge();
+            } else {
+              VTApp.showToast('Note: ' + res.message, 'warning');
+            }
+          });
+        }
+      });
+    }
+
+    if (testBtn) {
+      testBtn.addEventListener('click', async () => {
+        if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
+          VTApp.showToast('Please enter and save your Supabase URL & Key first.', 'warning');
+          return;
+        }
+        VTApp.showToast('Pinging Supabase Storage...', 'info');
+        const res = await window.VTSupabase.testConnection();
+        if (res.success) {
+          VTApp.showToast(res.message, 'success');
+          updateSupabaseBadge();
+        } else {
+          VTApp.showToast('Connection check: ' + res.message, 'warning');
+        }
       });
     }
   }

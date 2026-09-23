@@ -16,23 +16,8 @@ const STORAGE_KEYS = {
 // Initial Seed Products Catalog with Authentic Building Material Images
 const DEFAULT_PRODUCTS = [
   {
-    id: 'prod-1',
-    sortOrder: 1,
-    name: 'UltraTech Cement (Super / Weather Plus)',
-    category: 'cement',
-    unit: 'Per Bag (50 Kg)',
-    wholesalePrice: 'Call for Bulk Rate',
-    retailPrice: '₹370 - ₹395',
-    stockStatus: 'in-stock', // in-stock, low-stock, out-of-stock
-    featured: true,
-    description: 'India’s No. 1 cement. Engineered for high early strength, crack prevention, and dampness resistance in RCC structures.',
-    icon: 'cement',
-    image: 'assets/images/ultratech-cement.jpg',
-    imageFit: 'contain'
-  },
-  {
     id: 'prod-2',
-    sortOrder: 2,
+    sortOrder: 1,
     name: 'ACC Gold Water Shield Cement',
     category: 'cement',
     unit: 'Per Bag (50 Kg)',
@@ -47,7 +32,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-3',
-    sortOrder: 3,
+    sortOrder: 2,
     name: 'Fe 550D TMT Rebar (Tata / Jindal / Polad)',
     category: 'steel',
     unit: 'Per Ton / Per Kg (8mm - 32mm)',
@@ -62,7 +47,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-4',
-    sortOrder: 4,
+    sortOrder: 3,
     name: 'Washed River Sand & M-Sand (Plaster / Concrete)',
     category: 'sand-aggregate',
     unit: 'Per Brass / Truck Tipper Load',
@@ -77,7 +62,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-5',
-    sortOrder: 5,
+    sortOrder: 4,
     name: 'Black Basalt Crushed Aggregates (10mm, 20mm, 40mm Khadi)',
     category: 'sand-aggregate',
     unit: 'Per Brass / Dumper Load',
@@ -91,38 +76,8 @@ const DEFAULT_PRODUCTS = [
     imageFit: 'cover'
   },
   {
-    id: 'prod-6',
-    sortOrder: 6,
-    name: 'First Class Kiln Burned Red Clay Bricks',
-    category: 'bricks-blocks',
-    unit: 'Per 1,000 Bricks / Tractor Load',
-    wholesalePrice: 'Volume Discount',
-    retailPrice: 'Best Market Price',
-    stockStatus: 'in-stock',
-    featured: true,
-    description: 'High compressive strength, sharp edges, metallic ring tone on impact. Zero cracks, uniform burnt red finish.',
-    icon: 'brick',
-    image: 'https://images.unsplash.com/photo-1584463699039-4aa8366ce270?w=600&auto=format&fit=crop&q=80',
-    imageFit: 'cover'
-  },
-  {
-    id: 'prod-7',
-    sortOrder: 7,
-    name: 'AAC Lightweight Autoclaved Aerated Concrete Blocks',
-    category: 'bricks-blocks',
-    unit: 'Per Piece / Per Cubic Meter',
-    wholesalePrice: 'Pallet Wholesale Price',
-    retailPrice: '₹55 - ₹75 / block',
-    stockStatus: 'in-stock',
-    featured: false,
-    description: 'Thermal insulating lightweight blocks that reduce building dead-load and speed up construction with less joint mortar.',
-    icon: 'brick',
-    image: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&auto=format&fit=crop&q=80',
-    imageFit: 'cover'
-  },
-  {
     id: 'prod-8',
-    sortOrder: 8,
+    sortOrder: 5,
     name: 'Supreme / Astral Heavy Duty PVC & CPVC Pipes',
     category: 'plumbing-hardware',
     unit: 'Per Length / Bundle',
@@ -137,7 +92,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-9',
-    sortOrder: 9,
+    sortOrder: 6,
     name: 'Dr. Fixit Waterproofing & Asian Paints Dampproof',
     category: 'finishing-paints',
     unit: '1L, 5L, 20L Cans',
@@ -151,8 +106,38 @@ const DEFAULT_PRODUCTS = [
     imageFit: 'cover'
   },
   {
+    id: 'prod-6',
+    sortOrder: 7,
+    name: 'First Class Kiln Burned Red Clay Bricks',
+    category: 'bricks-blocks',
+    unit: 'Per 1,000 Bricks / Tractor Load',
+    wholesalePrice: 'Volume Discount',
+    retailPrice: 'Best Market Price',
+    stockStatus: 'in-stock',
+    featured: true,
+    description: 'High compressive strength, sharp edges, metallic ring tone on impact. Zero cracks, uniform burnt red finish.',
+    icon: 'brick',
+    image: 'https://images.unsplash.com/photo-1584463699039-4aa8366ce270?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
+  },
+  {
+    id: 'prod-7',
+    sortOrder: 8,
+    name: 'AAC Lightweight Autoclaved Aerated Concrete Blocks',
+    category: 'bricks-blocks',
+    unit: 'Per Piece / Per Cubic Meter',
+    wholesalePrice: 'Pallet Wholesale Price',
+    retailPrice: '₹55 - ₹75 / block',
+    stockStatus: 'in-stock',
+    featured: false,
+    description: 'Thermal insulating lightweight blocks that reduce building dead-load and speed up construction with less joint mortar.',
+    icon: 'brick',
+    image: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
+  },
+  {
     id: 'prod-10',
-    sortOrder: 10,
+    sortOrder: 9,
     name: 'Binding Wire, Shuttering Nails & Construction Hardware',
     category: 'plumbing-hardware',
     unit: 'Per Bundle / Kg',
@@ -164,6 +149,36 @@ const DEFAULT_PRODUCTS = [
     icon: 'hardware',
     image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
     imageFit: 'cover'
+  },
+  {
+    id: 'prod-1',
+    sortOrder: 10,
+    name: 'UltraTech Cement (Super / Weather Plus)',
+    category: 'cement',
+    unit: 'Per Bag (50 Kg)',
+    wholesalePrice: 'Call for Bulk Rate',
+    retailPrice: '₹370 - ₹395',
+    stockStatus: 'in-stock', // in-stock, low-stock, out-of-stock
+    featured: true,
+    description: 'India’s No. 1 cement. Engineered for high early strength, crack prevention, and dampness resistance in RCC structures.',
+    icon: 'cement',
+    image: 'assets/images/ultratech-cement.jpg',
+    imageFit: 'contain'
+  },
+  {
+    id: 'prod-1790161445630',
+    sortOrder: 11,
+    name: 'Swastik Cement Fibre Sheet',
+    category: 'cement',
+    unit: 'Per Ton',
+    wholesalePrice: 'Direct Truck Delivery',
+    retailPrice: '',
+    stockStatus: 'in-stock',
+    featured: false,
+    description: 'Swastik Cement sheet is best in market. Use as doors and also heavy sheet use to make House',
+    icon: 'cement',
+    image: 'data:image/jpeg;base64,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',
+    imageFit: 'contain'
   }
 ];
 
@@ -257,7 +272,7 @@ class DataStore {
         let prods = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
         let changed = false;
         if (Array.isArray(prods)) {
-          prods = prods.map(p => {
+          prods = prods.filter(p => p.id !== '__catalog_order__' && p.id !== 'catalog_order').map((p, index) => {
             // Replace old unsplash carpenter photo for UltraTech
             if (p.id === 'prod-1' && (!p.image || p.image.includes('photo-1589939705384-5185137a7f0f'))) {
               p.image = 'assets/images/ultratech-cement.jpg';
@@ -343,9 +358,11 @@ class DataStore {
       // 1. Fetch live products from Supabase
       const { products, error: pErr } = await window.VTSupabase.fetchProducts();
       if (!pErr && Array.isArray(products) && products.length > 0) {
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+        const cleanProds = products.filter(p => p.id !== '__catalog_order__' && p.id !== 'catalog_order');
+        cleanProds.sort((a, b) => (a.sortOrder || 9999) - (b.sortOrder || 9999));
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cleanProds));
         catalogChanged = true;
-        window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products } }));
+        window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products: cleanProds } }));
       }
 
       // 2. Fetch live settings from Supabase
@@ -422,6 +439,9 @@ class DataStore {
       window.VTSupabase.upsertProduct(product).catch(err => {
         console.warn('Background Supabase upsert error:', err);
       });
+      window.VTSupabase.saveCatalogOrder(products.map(p => p.id)).catch(err => {
+        console.warn('Background saveCatalogOrder error:', err);
+      });
     }
 
     return product;
@@ -456,6 +476,9 @@ class DataStore {
 
     // Asynchronously push all updated order indexes to Supabase
     if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.saveCatalogOrder(products.map(p => p.id)).catch(err => {
+        console.warn('Background saveCatalogOrder error:', err);
+      });
       window.VTSupabase.bulkSyncProducts(products).catch(err => {
         console.warn('Background sequence cloud sync error:', err);
       });
@@ -487,6 +510,9 @@ class DataStore {
     window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products } }));
 
     if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.saveCatalogOrder(products.map(p => p.id)).catch(err => {
+        console.warn('Background saveCatalogOrder error:', err);
+      });
       window.VTSupabase.bulkSyncProducts(products).catch(err => {
         console.warn('Background sequence cloud sync error:', err);
       });
@@ -523,6 +549,9 @@ class DataStore {
     window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products: reordered } }));
 
     if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.saveCatalogOrder(reordered.map(p => p.id)).catch(err => {
+        console.warn('Background saveCatalogOrder error:', err);
+      });
       window.VTSupabase.bulkSyncProducts(reordered).catch(err => {
         console.warn('Background sequence cloud sync error:', err);
       });
@@ -544,6 +573,9 @@ class DataStore {
     if (window.VTSupabase && window.VTSupabase.isConfigured()) {
       window.VTSupabase.deleteProduct(id).catch(err => {
         console.warn('Background Supabase delete error:', err);
+      });
+      window.VTSupabase.saveCatalogOrder(products.map(p => p.id)).catch(err => {
+        console.warn('Background saveCatalogOrder error:', err);
       });
     }
 

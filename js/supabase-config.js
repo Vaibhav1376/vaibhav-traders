@@ -93,22 +93,51 @@ class SupabaseService {
 
       if (error) throw error;
 
-      // Map snake_case database columns to camelCase JavaScript model
-      const mapped = (data || []).map((row, idx) => ({
-        id: row.id,
-        sortOrder: typeof row.sort_order === 'number' ? row.sort_order : (typeof row.sortOrder === 'number' ? row.sortOrder : idx + 1),
-        name: row.name,
-        category: row.category,
-        unit: row.unit,
-        wholesalePrice: row.wholesale_price || row.wholesalePrice || 'Market Rate',
-        retailPrice: row.retail_price || row.retailPrice || '',
-        stockStatus: row.stock_status || row.stockStatus || 'in-stock',
-        featured: !!row.featured,
-        description: row.description || '',
-        icon: row.icon || (row.category ? row.category.split('-')[0] : 'box'),
-        image: row.image || '',
-        imageFit: row.image_fit || row.imageFit || 'contain'
-      }));
+      // 1. Check for __catalog_order__ metadata row
+      let orderMap = null;
+      const orderRow = (data || []).find(r => r.id === '__catalog_order__' || r.id === 'catalog_order');
+      if (orderRow && orderRow.description) {
+        try {
+          const idList = JSON.parse(orderRow.description);
+          if (Array.isArray(idList)) {
+            orderMap = new Map();
+            idList.forEach((id, idx) => orderMap.set(id, idx + 1));
+          }
+        } catch (e) {
+          console.warn('Failed to parse __catalog_order__:', e);
+        }
+      }
+
+      // 2. Filter out system metadata rows
+      const actualRows = (data || []).filter(r => r.id !== '__catalog_order__' && r.id !== 'catalog_order');
+
+      // 3. Map snake_case database columns to camelCase JavaScript model
+      const mapped = actualRows.map((row, idx) => {
+        let sortOrder = idx + 1;
+        if (orderMap && orderMap.has(row.id)) {
+          sortOrder = orderMap.get(row.id);
+        } else if (typeof row.sort_order === 'number') {
+          sortOrder = row.sort_order;
+        } else if (typeof row.sortOrder === 'number') {
+          sortOrder = row.sortOrder;
+        }
+
+        return {
+          id: row.id,
+          sortOrder,
+          name: row.name,
+          category: row.category,
+          unit: row.unit,
+          wholesalePrice: row.wholesale_price || row.wholesalePrice || 'Market Rate',
+          retailPrice: row.retail_price || row.retailPrice || '',
+          stockStatus: row.stock_status || row.stockStatus || 'in-stock',
+          featured: !!row.featured,
+          description: row.description || '',
+          icon: row.icon || (row.category ? row.category.split('-')[0] : 'box'),
+          image: row.image || '',
+          imageFit: row.image_fit || row.imageFit || 'contain'
+        };
+      });
 
       // Deterministically sort by sortOrder ascending
       mapped.sort((a, b) => (a.sortOrder || 9999) - (b.sortOrder || 9999));
@@ -208,6 +237,27 @@ class SupabaseService {
   }
 
   /**
+   * Persist catalog sequence ordering into Supabase
+   * @param {Array<string>} orderedIds
+   * @returns {Promise<{error: any}>}
+   */
+  async saveCatalogOrder(orderedIds) {
+    if (!this.client) return { error: new Error('Supabase not configured') };
+    try {
+      const orderRow = {
+        id: '__catalog_order__',
+        name: '__CATALOG_ORDER__',
+        category: 'system',
+        description: JSON.stringify(orderedIds)
+      };
+      return await this._resilientUpsert('products', orderRow, 'id');
+    } catch (err) {
+      console.warn('Supabase saveCatalogOrder warning:', err);
+      return { error: err };
+    }
+  }
+
+  /**
    * Bulk push an array of products to Supabase (Initial seed or full sync)
    * @param {Array} products
    * @returns {Promise<{count: number, error: any}>}
@@ -216,7 +266,9 @@ class SupabaseService {
     if (!this.client) return { count: 0, error: new Error('Supabase not configured') };
 
     try {
-      const rows = products.map((product, idx) => ({
+      const validProducts = (products || []).filter(p => p.id !== '__catalog_order__' && p.id !== 'catalog_order');
+
+      const rows = validProducts.map((product, idx) => ({
         id: product.id,
         sort_order: typeof product.sortOrder === 'number' ? product.sortOrder : (idx + 1),
         name: product.name,
@@ -234,6 +286,10 @@ class SupabaseService {
 
       const { data, error } = await this._resilientUpsert('products', rows, 'id');
       if (error) throw error;
+
+      // Always save catalog sequence order metadata
+      await this.saveCatalogOrder(validProducts.map(p => p.id));
+
       return { count: rows.length, error: null };
     } catch (err) {
       console.error('Supabase bulkSyncProducts error:', err);

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
-Sitemap: https://vaibhavtraders.in/sitemap.xml
+Sitemap: https://vaibhavtraderss.netlify.app/sitemap.xml

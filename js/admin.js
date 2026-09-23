@@ -156,14 +156,69 @@ const VTAdmin = {
     const table = document.getElementById('adminProductsTable');
     if (!table || !window.VTStore) return;
 
+    this.updateCloudStatusBadge();
     this.renderProductsTable();
     this.bindProductModalActions();
+    this.bindCloudSyncActions();
+
+    // Auto-refresh when cloud sync finishes
+    window.addEventListener('vt:catalog-synced', () => {
+      this.renderProductsTable();
+      this.updateCloudStatusBadge();
+    });
+
+    if (window.VTStore && typeof window.VTStore.syncWithCloud === 'function') {
+      window.VTStore.syncWithCloud();
+    }
+  },
+
+  updateCloudStatusBadge() {
+    const badge = document.getElementById('cloudStatusBadge');
+    if (!badge) return;
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      badge.className = 'badge badge-success';
+      badge.textContent = '● Cloud Live (Syncs to all visitors)';
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+    } else {
+      badge.className = 'badge badge-warning';
+      badge.textContent = '🟡 Local Mode (Setup Cloud in Settings)';
+      badge.style.background = '#fef9c3';
+      badge.style.color = '#854d0e';
+    }
+  },
+
+  bindCloudSyncActions() {
+    const btnPush = document.getElementById('btnPushToCloud');
+    if (btnPush) {
+      btnPush.addEventListener('click', async () => {
+        if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
+          VTApp.showToast('Please configure Supabase Project URL & Anon Key in Website Settings first.', 'warning');
+          return;
+        }
+        btnPush.disabled = true;
+        btnPush.textContent = '⏳ Syncing...';
+        VTApp.showToast('☁️ Pushing all materials to Supabase Cloud...', 'info');
+        try {
+          const res = await window.VTStore.pushLocalToCloud();
+          VTApp.showToast(`✅ Synced ${res.count} products to cloud! Visible to all visitors.`, 'success');
+          this.renderProductsTable();
+          this.updateCloudStatusBadge();
+        } catch (err) {
+          VTApp.showToast(`Sync failed: ${err.message}. Please check your Supabase tables.`, 'error');
+        } finally {
+          btnPush.disabled = false;
+          btnPush.textContent = '☁️ Sync All to Cloud';
+        }
+      });
+    }
   },
 
   renderProductsTable() {
     const table = document.getElementById('adminProductsTable');
     if (!table) return;
 
+    this.updateCloudStatusBadge();
     const products = window.VTStore.getProducts();
 
     if (products.length === 0) {
@@ -177,8 +232,8 @@ const VTAdmin = {
         ? `<button class="badge badge-success btn-toggle-stock" data-id="${p.id}" title="Click to toggle">In Stock</button>` 
         : `<button class="badge badge-warning btn-toggle-stock" data-id="${p.id}" title="Click to toggle">Inquire</button>`;
 
-      const defaultImg = 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80';
-      const imgSrc = p.image || defaultImg;
+      const defaultImg = '../assets/images/ultratech-cement.jpg';
+      const imgSrc = window.VTStore ? window.VTStore.resolveImageUrl(p.image) : (p.image || defaultImg);
 
       return `
         <tr>
@@ -454,12 +509,16 @@ const VTAdmin = {
           stockStatus,
           description: description || 'High grade construction material supplied by Vaibhav Traders.',
           icon: category.split('-')[0],
-          image: image || 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80',
+          image: image || 'assets/images/ultratech-cement.jpg',
           imageFit
         });
 
         modal.classList.remove('active');
-        VTApp.showToast('Product saved successfully!', 'success');
+        if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+          VTApp.showToast('✅ Material saved & synced to Live Website for all visitors!', 'success');
+        } else {
+          VTApp.showToast('Product saved locally. Configure Supabase in Settings to sync live to all visitors.', 'info');
+        }
         this.renderProductsTable();
         this.updateStats();
       });
@@ -813,13 +872,51 @@ const VTAdmin = {
           VTApp.showToast('Please enter and save your Supabase URL & Key first.', 'warning');
           return;
         }
-        VTApp.showToast('Pinging Supabase Storage...', 'info');
+        VTApp.showToast('Testing Supabase Cloud connection...', 'info');
         const res = await window.VTSupabase.testConnection();
         if (res.success) {
           VTApp.showToast(res.message, 'success');
           updateSupabaseBadge();
         } else {
           VTApp.showToast('Connection check: ' + res.message, 'warning');
+        }
+      });
+    }
+
+    // 1-Click SQL Copy Button
+    const copySqlBtn = document.getElementById('btnCopySql');
+    const sqlText = document.getElementById('supabaseSqlText');
+    if (copySqlBtn && sqlText) {
+      copySqlBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(sqlText.value).then(() => {
+          VTApp.showToast('📋 SQL Script copied! Paste it into your Supabase SQL Editor and click Run.', 'success');
+        }).catch(() => {
+          sqlText.select();
+          document.execCommand('copy');
+          VTApp.showToast('📋 SQL Script copied to clipboard!', 'success');
+        });
+      });
+    }
+
+    // Push local catalog to Supabase Cloud button in Settings
+    const syncLocalBtn = document.getElementById('btnSyncLocalToCloud');
+    if (syncLocalBtn) {
+      syncLocalBtn.addEventListener('click', async () => {
+        if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
+          VTApp.showToast('Please configure and save your Supabase Project URL & Key first.', 'warning');
+          return;
+        }
+        syncLocalBtn.disabled = true;
+        syncLocalBtn.textContent = '⏳ Syncing...';
+        VTApp.showToast('☁️ Pushing all local materials to Supabase Cloud...', 'info');
+        try {
+          const res = await window.VTStore.pushLocalToCloud();
+          VTApp.showToast(`✅ Successfully synced ${res.count} products to Supabase Cloud! Visible to all visitors.`, 'success');
+        } catch (err) {
+          VTApp.showToast(`Sync failed: ${err.message}. Ensure the 'products' table was created using the SQL script.`, 'error');
+        } finally {
+          syncLocalBtn.disabled = false;
+          syncLocalBtn.textContent = '☁️ Push Catalog to Cloud';
         }
       });
     }

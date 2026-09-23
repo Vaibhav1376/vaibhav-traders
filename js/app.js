@@ -14,6 +14,15 @@ const VTApp = {
     this.highlightActiveNav();
     this.bindWhatsAppButtons();
     this.initScrollAnimations();
+
+    window.addEventListener('vt:settings-synced', () => {
+      this.renderAnnouncement();
+      this.syncDynamicSettings();
+    });
+
+    if (window.VTStore && typeof window.VTStore.syncWithCloud === 'function') {
+      window.VTStore.syncWithCloud();
+    }
   },
 
   // Header Elevation on Scroll

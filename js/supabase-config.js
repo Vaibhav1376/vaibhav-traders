@@ -1,13 +1,13 @@
 /**
  * ==========================================================================
- * VAIBHAV TRADERS - SUPABASE CLOUD INTEGRATION
- * Manages Supabase client initialization, Storage bucket uploads for product images
+ * VAIBHAV TRADERS - SUPABASE CLOUD DATABASE & STORAGE INTEGRATION
+ * Real-time PostgreSQL catalog sync & permanent cloud image hosting
  * ==========================================================================
  */
 
 const SUPABASE_CONFIG = {
-  // Replace these with your Supabase Project details or configure them in Admin > Settings
-  url: localStorage.getItem('vt_supabase_url') || 'https://your-project.supabase.co',
+  // Configured Project Credentials (can also be configured in Admin > Settings)
+  url: localStorage.getItem('vt_supabase_url') || '',
   anonKey: localStorage.getItem('vt_supabase_anon_key') || '',
   bucketName: localStorage.getItem('vt_supabase_bucket') || 'product-images'
 };
@@ -22,20 +22,22 @@ class SupabaseService {
     const url = localStorage.getItem('vt_supabase_url') || SUPABASE_CONFIG.url;
     const key = localStorage.getItem('vt_supabase_anon_key') || SUPABASE_CONFIG.anonKey;
 
-    if (window.supabase && url && key && !url.includes('your-project.supabase.co')) {
+    if (window.supabase && url && key && !url.includes('your-project.supabase.co') && url.startsWith('http')) {
       try {
-        this.client = window.supabase.createClient(url, key);
-        console.log('✅ Supabase Client Initialized successfully');
+        this.client = window.supabase.createClient(url.trim(), key.trim());
+        console.log('✅ Supabase Cloud Client Initialized successfully');
       } catch (err) {
         console.error('Failed to initialize Supabase client:', err);
         this.client = null;
       }
+    } else {
+      this.client = null;
     }
   }
 
   isConfigured() {
-    const url = localStorage.getItem('vt_supabase_url');
-    const key = localStorage.getItem('vt_supabase_anon_key');
+    const url = localStorage.getItem('vt_supabase_url') || SUPABASE_CONFIG.url;
+    const key = localStorage.getItem('vt_supabase_anon_key') || SUPABASE_CONFIG.anonKey;
     return !!(this.client && url && key && !url.includes('your-project.supabase.co'));
   }
 
@@ -49,11 +51,215 @@ class SupabaseService {
 
   getConfig() {
     return {
-      url: localStorage.getItem('vt_supabase_url') || '',
-      anonKey: localStorage.getItem('vt_supabase_anon_key') || '',
-      bucketName: localStorage.getItem('vt_supabase_bucket') || 'product-images'
+      url: localStorage.getItem('vt_supabase_url') || SUPABASE_CONFIG.url || '',
+      anonKey: localStorage.getItem('vt_supabase_anon_key') || SUPABASE_CONFIG.anonKey || '',
+      bucketName: localStorage.getItem('vt_supabase_bucket') || SUPABASE_CONFIG.bucketName || 'product-images'
     };
   }
+
+  // -------------------------------------------------------------------------
+  // DATABASE OPERATIONS (PRODUCTS TABLE)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fetch live product catalog from Supabase Database
+   * @returns {Promise<{products: Array|null, error: any}>}
+   */
+  async fetchProducts() {
+    if (!this.client) return { products: null, error: new Error('Supabase not configured') };
+
+    try {
+      const { data, error } = await this.client
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Map snake_case database columns to camelCase JavaScript model
+      const mapped = (data || []).map(row => ({
+        id: row.id,
+        name: row.name,
+        category: row.category,
+        unit: row.unit,
+        wholesalePrice: row.wholesale_price || row.wholesalePrice || 'Market Rate',
+        retailPrice: row.retail_price || row.retailPrice || '',
+        stockStatus: row.stock_status || row.stockStatus || 'in-stock',
+        featured: !!row.featured,
+        description: row.description || '',
+        icon: row.icon || (row.category ? row.category.split('-')[0] : 'box'),
+        image: row.image || '',
+        imageFit: row.image_fit || row.imageFit || 'contain'
+      }));
+
+      return { products: mapped, error: null };
+    } catch (err) {
+      console.warn('Supabase fetchProducts warning:', err);
+      return { products: null, error: err };
+    }
+  }
+
+  /**
+   * Upsert a product into the Supabase 'products' table
+   * @param {Object} product
+   * @returns {Promise<{data: any, error: any}>}
+   */
+  async upsertProduct(product) {
+    if (!this.client) return { data: null, error: new Error('Supabase not configured') };
+
+    try {
+      const row = {
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        unit: product.unit,
+        wholesale_price: product.wholesalePrice,
+        retail_price: product.retailPrice || '',
+        stock_status: product.stockStatus || 'in-stock',
+        featured: !!product.featured,
+        description: product.description || '',
+        icon: product.icon || (product.category ? product.category.split('-')[0] : 'box'),
+        image: product.image || '',
+        image_fit: product.imageFit || 'contain',
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await this.client
+        .from('products')
+        .upsert(row, { onConflict: 'id' });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (err) {
+      console.error('Supabase upsertProduct error:', err);
+      return { data: null, error: err };
+    }
+  }
+
+  /**
+   * Delete a product from Supabase 'products' table
+   * @param {string} id
+   * @returns {Promise<{error: any}>}
+   */
+  async deleteProduct(id) {
+    if (!this.client) return { error: new Error('Supabase not configured') };
+
+    try {
+      const { error } = await this.client
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { error: null };
+    } catch (err) {
+      console.error('Supabase deleteProduct error:', err);
+      return { error: err };
+    }
+  }
+
+  /**
+   * Bulk push an array of products to Supabase (Initial seed or full sync)
+   * @param {Array} products
+   * @returns {Promise<{count: number, error: any}>}
+   */
+  async bulkSyncProducts(products) {
+    if (!this.client) return { count: 0, error: new Error('Supabase not configured') };
+
+    try {
+      const rows = products.map(product => ({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        unit: product.unit,
+        wholesale_price: product.wholesalePrice,
+        retail_price: product.retailPrice || '',
+        stock_status: product.stockStatus || 'in-stock',
+        featured: !!product.featured,
+        description: product.description || '',
+        icon: product.icon || (product.category ? product.category.split('-')[0] : 'box'),
+        image: product.image || '',
+        image_fit: product.imageFit || 'contain',
+        updated_at: new Date().toISOString()
+      }));
+
+      const { data, error } = await this.client
+        .from('products')
+        .upsert(rows, { onConflict: 'id' });
+
+      if (error) throw error;
+      return { count: rows.length, error: null };
+    } catch (err) {
+      console.error('Supabase bulkSyncProducts error:', err);
+      return { count: 0, error: err };
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // SETTINGS SYNC (SITE_SETTINGS TABLE)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fetch site settings from Supabase
+   */
+  async fetchSettings() {
+    if (!this.client) return { settings: null, error: new Error('Supabase not configured') };
+    try {
+      const { data, error } = await this.client
+        .from('site_settings')
+        .select('*')
+        .eq('id', 'current')
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return { settings: null, error: null };
+
+      return {
+        settings: {
+          announcementText: data.announcement_text,
+          announcementActive: data.announcement_active,
+          phone: data.phone,
+          address: data.address,
+          googleRating: data.google_rating,
+          gstNumber: data.gst_number
+        },
+        error: null
+      };
+    } catch (err) {
+      return { settings: null, error: err };
+    }
+  }
+
+  /**
+   * Save site settings to Supabase
+   */
+  async saveSettings(settings) {
+    if (!this.client) return { error: new Error('Supabase not configured') };
+    try {
+      const row = {
+        id: 'current',
+        announcement_text: settings.announcementText,
+        announcement_active: settings.announcementActive,
+        phone: settings.phone,
+        address: settings.address,
+        google_rating: settings.googleRating,
+        gst_number: settings.gstNumber,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await this.client
+        .from('site_settings')
+        .upsert(row, { onConflict: 'id' });
+
+      if (error) throw error;
+      return { error: null };
+    } catch (err) {
+      return { error: err };
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // STORAGE OPERATIONS (PRODUCT-IMAGES BUCKET)
+  // -------------------------------------------------------------------------
 
   /**
    * Upload an image file directly to Supabase Storage bucket
@@ -70,21 +276,20 @@ class SupabaseService {
     }
 
     try {
-      const bucket = localStorage.getItem('vt_supabase_bucket') || 'product-images';
+      const bucket = localStorage.getItem('vt_supabase_bucket') || SUPABASE_CONFIG.bucketName || 'product-images';
       const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      const cleanFileName = file.name ? file.name.replace(/[^a-zA-Z0-9.-]/g, '_') : 'image';
+      const fileName = `${folder}/${Date.now()}-${cleanFileName}`;
 
       // Upload file to Supabase Storage
       const { data, error } = await this.client.storage
         .from(bucket)
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
           upsert: true
         });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       // Get permanent public URL
       const { data: publicData } = this.client.storage
@@ -99,20 +304,55 @@ class SupabaseService {
   }
 
   /**
-   * Test connection to Supabase
+   * Comprehensive connection test: tests both Database table and Storage bucket
    */
   async testConnection() {
-    if (!this.client) return { success: false, message: 'Supabase client is not initialized.' };
+    if (!this.client) {
+      return { 
+        success: false, 
+        database: false,
+        storage: false,
+        message: 'Supabase client is not initialized. Please check URL and Key.' 
+      };
+    }
+
+    let dbOk = false;
+    let storageOk = false;
+    let details = [];
+
+    // Test Database 'products' table
+    try {
+      const { data, error } = await this.client.from('products').select('id').limit(1);
+      if (error) {
+        details.push(`Database Table Note: ${error.message} (Run the SQL setup script in Supabase SQL editor)`);
+      } else {
+        dbOk = true;
+        details.push(`✅ Database 'products' table is active and reachable!`);
+      }
+    } catch (e) {
+      details.push(`Database error: ${e.message}`);
+    }
+
+    // Test Storage Bucket
     try {
       const bucket = localStorage.getItem('vt_supabase_bucket') || 'product-images';
       const { data, error } = await this.client.storage.getBucket(bucket);
-      if (error && !error.message.includes('not found')) {
-        return { success: true, message: `Connected to Supabase! Note: make sure bucket '${bucket}' exists and is set to Public.` };
+      if (error) {
+        details.push(`Storage Bucket Note: ${error.message} (Make sure '${bucket}' exists in Supabase Storage and is set to Public)`);
+      } else {
+        storageOk = true;
+        details.push(`✅ Storage bucket '${bucket}' is active and ready!`);
       }
-      return { success: true, message: `Connected to Supabase! Bucket '${bucket}' is active and ready.` };
-    } catch (err) {
-      return { success: false, message: err.message };
+    } catch (e) {
+      details.push(`Storage error: ${e.message}`);
     }
+
+    return {
+      success: dbOk || storageOk,
+      database: dbOk,
+      storage: storageOk,
+      message: details.join('\n')
+    };
   }
 }
 

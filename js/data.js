@@ -1,7 +1,7 @@
 /**
  * ==========================================================================
  * VAIBHAV TRADERS - UNIFIED DATA & STATE STORE
- * Manages local storage persistence, state synchronization, seed catalog
+ * Manages local caching, cloud synchronization, seed catalog
  * ==========================================================================
  */
 
@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
   ADMIN_AUTH: 'vt_admin_session'
 };
 
-// Initial Seed Products Catalog
+// Initial Seed Products Catalog with Authentic Building Material Images
 const DEFAULT_PRODUCTS = [
   {
     id: 'prod-1',
@@ -26,7 +26,8 @@ const DEFAULT_PRODUCTS = [
     featured: true,
     description: 'India’s No. 1 cement. Engineered for high early strength, crack prevention, and dampness resistance in RCC structures.',
     icon: 'cement',
-    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80'
+    image: 'assets/images/ultratech-cement.jpg',
+    imageFit: 'contain'
   },
   {
     id: 'prod-2',
@@ -39,7 +40,8 @@ const DEFAULT_PRODUCTS = [
     featured: true,
     description: 'Water-repellent premium composition that protects slabs and columns from rainwater seepage and efflorescence.',
     icon: 'cement',
-    image: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=600&auto=format&fit=crop&q=80'
+    image: 'assets/images/acc-gold-cement.jpg',
+    imageFit: 'contain'
   },
   {
     id: 'prod-3',
@@ -52,7 +54,8 @@ const DEFAULT_PRODUCTS = [
     featured: true,
     description: 'High ductile earthquake-resistant TMT steel with superior elongation and corrosion resistance for strong foundations.',
     icon: 'steel',
-    image: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=600&auto=format&fit=crop&q=80'
+    image: 'assets/images/tmt-steel-rebars.jpg',
+    imageFit: 'cover'
   },
   {
     id: 'prod-4',
@@ -65,7 +68,8 @@ const DEFAULT_PRODUCTS = [
     featured: true,
     description: 'Double washed, silt-free river sand and precision-screened manufactured sand for optimal mortar and concrete bonding.',
     icon: 'sand',
-    image: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   },
   {
     id: 'prod-5',
@@ -78,7 +82,8 @@ const DEFAULT_PRODUCTS = [
     featured: false,
     description: 'Angular machine-crushed hard rock blue/black basalt aggregates conforming to IS 383 standards for RCC casting.',
     icon: 'aggregate',
-    image: 'https://images.unsplash.com/photo-1578885136359-16c8bd4d3a8e?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1578885136359-16c8bd4d3a8e?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   },
   {
     id: 'prod-6',
@@ -91,7 +96,8 @@ const DEFAULT_PRODUCTS = [
     featured: true,
     description: 'High compressive strength, sharp edges, metallic ring tone on impact. Zero cracks, uniform burnt red finish.',
     icon: 'brick',
-    image: 'https://images.unsplash.com/photo-1584463699039-4aa8366ce270?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1584463699039-4aa8366ce270?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   },
   {
     id: 'prod-7',
@@ -104,7 +110,8 @@ const DEFAULT_PRODUCTS = [
     featured: false,
     description: 'Thermal insulating lightweight blocks that reduce building dead-load and speed up construction with less joint mortar.',
     icon: 'brick',
-    image: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   },
   {
     id: 'prod-8',
@@ -117,7 +124,8 @@ const DEFAULT_PRODUCTS = [
     featured: false,
     description: 'Complete plumbing, drainage, agriculture, and casing pipe solutions with high pressure ratings and leak-proof joints.',
     icon: 'plumbing',
-    image: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   },
   {
     id: 'prod-9',
@@ -130,7 +138,8 @@ const DEFAULT_PRODUCTS = [
     featured: false,
     description: 'Elastomeric waterproofing membranes, integral liquid waterproofing compounds, and exterior weather-guard coatings.',
     icon: 'paint',
-    image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   },
   {
     id: 'prod-10',
@@ -143,7 +152,8 @@ const DEFAULT_PRODUCTS = [
     featured: false,
     description: 'Annealed GI binding wire, hardened wire nails, scaffolding ties, and essential construction site hardware.',
     icon: 'hardware',
-    image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
+    imageFit: 'cover'
   }
 ];
 
@@ -232,21 +242,27 @@ class DataStore {
     if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
     } else {
-      // Auto-migrate products in localStorage if image attribute is missing
+      // Auto-migrate products in localStorage: replace obsolete stock worker image with real UltraTech cement sack
       try {
         let prods = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS));
         let changed = false;
         if (Array.isArray(prods)) {
           prods = prods.map(p => {
-            if (!p.image) {
-              const def = DEFAULT_PRODUCTS.find(dp => dp.id === p.id);
-              if (def && def.image) {
-                p.image = def.image;
-                changed = true;
-              } else {
-                p.image = 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80';
-                changed = true;
-              }
+            // Replace old unsplash carpenter photo for UltraTech
+            if (p.id === 'prod-1' && (!p.image || p.image.includes('photo-1589939705384-5185137a7f0f'))) {
+              p.image = 'assets/images/ultratech-cement.jpg';
+              p.imageFit = 'contain';
+              changed = true;
+            }
+            if (p.id === 'prod-2' && (!p.image || p.image.includes('photo-1590069261209-f8e9b8642343'))) {
+              p.image = 'assets/images/acc-gold-cement.jpg';
+              p.imageFit = 'contain';
+              changed = true;
+            }
+            if (p.id === 'prod-3' && (!p.image || p.image.includes('photo-1504917599217-d4dc5ebe6122'))) {
+              p.image = 'assets/images/tmt-steel-rebars.jpg';
+              p.imageFit = 'cover';
+              changed = true;
             }
             if (!p.imageFit) {
               p.imageFit = 'contain';
@@ -258,8 +274,11 @@ class DataStore {
             localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(prods));
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Migration error in DataStore init:', e);
+      }
     }
+
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
     }
@@ -271,7 +290,83 @@ class DataStore {
     }
   }
 
-  // Products
+  /**
+   * Helper to resolve local/relative image paths across both root and admin subfolders
+   */
+  resolveImageUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) {
+      return path;
+    }
+    const isInAdmin = window.location.pathname.includes('/admin/');
+    if (isInAdmin && path.startsWith('assets/')) {
+      return '../' + path;
+    }
+    if (!isInAdmin && path.startsWith('../assets/')) {
+      return path.replace('../', '');
+    }
+    return path;
+  }
+
+  // -------------------------------------------------------------------------
+  // CLOUD SYNCHRONIZATION
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fetch live catalog and settings from Supabase Cloud
+   * Dispatches 'vt:catalog-synced' and 'vt:settings-synced' when new cloud data arrives
+   */
+  async syncWithCloud() {
+    if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
+      return { success: false, reason: 'Supabase Cloud not configured' };
+    }
+
+    let catalogChanged = false;
+    let settingsChanged = false;
+
+    try {
+      // 1. Fetch live products from Supabase
+      const { products, error: pErr } = await window.VTSupabase.fetchProducts();
+      if (!pErr && Array.isArray(products) && products.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+        catalogChanged = true;
+        window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products } }));
+      }
+
+      // 2. Fetch live settings from Supabase
+      const { settings, error: sErr } = await window.VTSupabase.fetchSettings();
+      if (!sErr && settings) {
+        const current = this.getSettings();
+        const merged = { ...current, ...settings };
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(merged));
+        settingsChanged = true;
+        window.dispatchEvent(new CustomEvent('vt:settings-synced', { detail: { settings: merged } }));
+      }
+
+      return { success: true, catalogChanged, settingsChanged };
+    } catch (err) {
+      console.warn('Sync with Supabase cloud failed:', err);
+      return { success: false, error: err };
+    }
+  }
+
+  /**
+   * Push all current local products to Supabase Cloud Database in one click
+   */
+  async pushLocalToCloud() {
+    if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
+      throw new Error('Supabase Cloud is not configured. Please enter your Project URL and Anon Key in Settings.');
+    }
+    const products = this.getProducts();
+    const { count, error } = await window.VTSupabase.bulkSyncProducts(products);
+    if (error) throw error;
+    return { success: true, count };
+  }
+
+  // -------------------------------------------------------------------------
+  // PRODUCTS CRUD (LOCAL + CLOUD AUTO-SYNC)
+  // -------------------------------------------------------------------------
+
   getProducts() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS)) || DEFAULT_PRODUCTS;
@@ -294,6 +389,14 @@ class DataStore {
       products.unshift(product);
     }
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+
+    // Asynchronously push to Supabase Cloud
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.upsertProduct(product).catch(err => {
+        console.warn('Background Supabase upsert error:', err);
+      });
+    }
+
     return product;
   }
 
@@ -301,6 +404,14 @@ class DataStore {
     let products = this.getProducts();
     products = products.filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+
+    // Asynchronously delete from Supabase Cloud
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.deleteProduct(id).catch(err => {
+        console.warn('Background Supabase delete error:', err);
+      });
+    }
+
     return true;
   }
 
@@ -309,7 +420,10 @@ class DataStore {
     return DEFAULT_PRODUCTS;
   }
 
-  // Settings
+  // -------------------------------------------------------------------------
+  // SETTINGS (LOCAL + CLOUD AUTO-SYNC)
+  // -------------------------------------------------------------------------
+
   getSettings() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS)) || {};
@@ -323,10 +437,21 @@ class DataStore {
     const current = this.getSettings();
     const updated = { ...current, ...newSettings };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+
+    // Asynchronously push to Supabase Cloud
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.saveSettings(updated).catch(err => {
+        console.warn('Background Supabase settings save error:', err);
+      });
+    }
+
     return updated;
   }
 
-  // Leads
+  // -------------------------------------------------------------------------
+  // LEADS
+  // -------------------------------------------------------------------------
+
   getLeads() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.LEADS)) || DEFAULT_LEADS;
@@ -366,7 +491,10 @@ class DataStore {
     return true;
   }
 
-  // Reviews
+  // -------------------------------------------------------------------------
+  // REVIEWS
+  // -------------------------------------------------------------------------
+
   getReviews() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.REVIEWS)) || DEFAULT_REVIEWS;
@@ -382,32 +510,7 @@ class DataStore {
     localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
     return review;
   }
-
-  // Backup & Restore
-  exportAllData() {
-    const data = {
-      exportDate: new Date().toISOString(),
-      products: this.getProducts(),
-      settings: this.getSettings(),
-      leads: this.getLeads(),
-      reviews: this.getReviews()
-    };
-    return JSON.stringify(data, null, 2);
-  }
-
-  importAllData(jsonString) {
-    try {
-      const data = JSON.parse(jsonString);
-      if (data.products) localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(data.products));
-      if (data.settings) localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
-      if (data.leads) localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(data.leads));
-      if (data.reviews) localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(data.reviews));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  }
 }
 
-// Global Export
+// Instantiate global Store
 window.VTStore = new DataStore();

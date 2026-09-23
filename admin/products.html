@@ -69,7 +69,11 @@
         <h2 style="font-size: 1.35rem; margin-bottom: 0.15rem;">Product & Material Catalog Manager</h2>
         <p style="font-size: 0.8rem; color: var(--color-text-muted); margin: 0;">Add, update prices, or toggle in-stock availability across the live customer website</p>
       </div>
-      <div style="display: flex; gap: 0.75rem;">
+      <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <span id="cloudStatusBadge" class="badge badge-warning" style="font-size: 0.75rem; padding: 4px 8px;">🟡 Local Mode</span>
+        <button id="btnPushToCloud" class="btn btn-outline btn-sm" style="color: #10b981; border-color: #10b981; font-weight: 600;" title="Push all current products and photos to Supabase Cloud so all mobile/desktop visitors see them">
+          ☁️ Sync All to Cloud
+        </button>
         <button id="btnResetDefaultProducts" class="btn btn-outline btn-sm" style="color: var(--color-text-muted);">
           Reset Defaults
         </button>

@@ -1,7 +1,7 @@
 /**
  * ==========================================================================
  * VAIBHAV TRADERS - PRODUCT CATALOG & FILTER ENGINE
- * Live search, category filtering, quote modal, WhatsApp lead router
+ * Live search, category filtering, quote modal, WhatsApp lead router, cloud sync
  * ==========================================================================
  */
 
@@ -15,6 +15,17 @@ const VTProducts = {
     this.bindSearch();
     this.renderCatalog();
     this.bindQuoteModal();
+
+    // Listen for live cloud synchronization updates from Supabase
+    window.addEventListener('vt:catalog-synced', () => {
+      console.log('🔄 Catalog updated from Supabase Cloud, refreshing display...');
+      this.renderCatalog();
+    });
+
+    // Automatically trigger cloud synchronization in the background
+    if (window.VTStore && typeof window.VTStore.syncWithCloud === 'function') {
+      window.VTStore.syncWithCloud();
+    }
   },
 
   // Material category SVG icons
@@ -107,13 +118,15 @@ const VTProducts = {
       const fitClass = isCover ? 'img-cover' : '';
       const mediaStyle = isCover ? 'background: #0f172a; padding: 0;' : 'background: #f8fafc; padding: var(--space-3);';
 
+      const resolvedImage = window.VTStore ? window.VTStore.resolveImageUrl(product.image) : product.image;
+
       return `
         <div class="card product-card" data-product-id="${product.id}">
           <div class="product-card-media" style="${mediaStyle}">
-            ${product.image ? `
-              <img src="${product.image}" alt="${VTApp.escapeHtml(product.name)}" class="product-card-img ${fitClass}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+            ${resolvedImage ? `
+              <img src="${resolvedImage}" alt="${VTApp.escapeHtml(product.name)}" class="product-card-img ${fitClass}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
             ` : ''}
-            <div class="product-media-icon" style="${product.image ? 'display: none;' : 'display: flex;'}">
+            <div class="product-media-icon" style="${resolvedImage ? 'display: none;' : 'display: flex;'}">
               ${this.getIconSvg(product.icon || product.category)}
             </div>
             <div class="product-card-badge">
@@ -199,8 +212,10 @@ const VTProducts = {
     const prodName = document.getElementById('quoteModalProdName');
     const prodRate = document.getElementById('quoteModalProdRate');
 
+    const resolvedImage = window.VTStore ? window.VTStore.resolveImageUrl(product.image) : product.image;
+
     if (prodImg) {
-      prodImg.src = product.image || 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80';
+      prodImg.src = resolvedImage || 'assets/images/ultratech-cement.jpg';
       prodImg.alt = product.name;
     }
     if (prodName) prodName.textContent = product.name;

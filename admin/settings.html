@@ -180,8 +180,61 @@
                 <button type="button" id="btnTestSupabase" class="btn btn-outline btn-sm">
                   Test Connection
                 </button>
+                <button type="button" id="btnSyncLocalToCloud" class="btn btn-dark btn-sm" style="background: #0f172a;">
+                  ☁️ Push Catalog to Cloud
+                </button>
               </div>
             </form>
+
+            <!-- 1-Click SQL Setup Guide -->
+            <div style="margin-top: 1.5rem; border-top: 1px dashed var(--color-border); padding-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label class="form-label" style="margin: 0; font-size: 0.85rem; font-weight: 700;">1-Click Supabase SQL Setup</label>
+                <button type="button" id="btnCopySql" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">
+                  📋 Copy SQL
+                </button>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 0.5rem;">
+                Copy and run this in your <a href="https://supabase.com/dashboard" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Supabase SQL Editor</a>. It automatically creates the <code>products</code> table, <code>site_settings</code> table, and enables public access for all visitors.
+              </p>
+              <textarea id="supabaseSqlText" class="form-control" rows="8" readonly style="font-family: monospace; font-size: 0.72rem; background: #0f172a; color: #38bdf8; border-color: #334155; line-height: 1.4;">-- 1. Create Products Table
+create table if not exists products (
+  id text primary key,
+  name text not null,
+  category text not null,
+  unit text,
+  wholesale_price text,
+  retail_price text,
+  stock_status text default 'in-stock',
+  featured boolean default false,
+  description text,
+  icon text,
+  image text,
+  image_fit text default 'contain',
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 2. Create Site Settings Table
+create table if not exists site_settings (
+  id text primary key default 'current',
+  announcement_text text,
+  announcement_active boolean default true,
+  phone text,
+  address text,
+  google_rating text,
+  gst_number text,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 3. Enable Row Level Security & Public Access
+alter table products enable row level security;
+alter table site_settings enable row level security;
+
+create policy "Allow public read products" on products for select using (true);
+create policy "Allow public read settings" on site_settings for select using (true);
+create policy "Allow public write products" on products for all using (true) with check (true);
+create policy "Allow public write settings" on site_settings for all using (true) with check (true);</textarea>
+            </div>
           </div>
 
           <div class="card" style="padding: 2rem; background: var(--color-surface-muted);">

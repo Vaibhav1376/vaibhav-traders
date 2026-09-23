@@ -7,9 +7,9 @@
 
 const SUPABASE_CONFIG = {
   // Configured Project Credentials (can also be configured in Admin > Settings)
-  url: localStorage.getItem('vt_supabase_url') || '',
+  url: localStorage.getItem('vt_supabase_url') || 'https://usryzvjmruelbhepwtvc.supabase.co',
   anonKey: localStorage.getItem('vt_supabase_anon_key') || '',
-  bucketName: localStorage.getItem('vt_supabase_bucket') || 'product-images'
+  bucketName: localStorage.getItem('vt_supabase_bucket') || 'product image'
 };
 
 class SupabaseService {
@@ -286,6 +286,40 @@ class SupabaseService {
   // -------------------------------------------------------------------------
 
   /**
+   * Helper to find the actual bucket ID from Supabase (handles spaces, hyphens, and casing)
+   */
+  async getEffectiveBucket() {
+    const configured = (localStorage.getItem('vt_supabase_bucket') || SUPABASE_CONFIG.bucketName || 'product image').trim();
+    if (!this.client) return configured;
+
+    try {
+      const { data: buckets, error } = await this.client.storage.listBuckets();
+      if (!error && Array.isArray(buckets) && buckets.length > 0) {
+        // Direct match
+        const match = buckets.find(b => b.id === configured || b.name === configured);
+        if (match) return match.id;
+
+        // Normalized match
+        const normConfig = configured.toLowerCase().replace(/[\s_-]/g, '');
+        const fuzzy = buckets.find(b => {
+          const nId = (b.id || '').toLowerCase().replace(/[\s_-]/g, '');
+          const nName = (b.name || '').toLowerCase().replace(/[\s_-]/g, '');
+          return nId === normConfig || nName === normConfig;
+        });
+        if (fuzzy) return fuzzy.id;
+
+        // First public bucket or first bucket
+        const anyPublic = buckets.find(b => b.public);
+        if (anyPublic) return anyPublic.id;
+        return buckets[0].id;
+      }
+    } catch (e) {
+      console.warn('Could not auto-resolve bucket:', e);
+    }
+    return configured;
+  }
+
+  /**
    * Upload an image file directly to Supabase Storage bucket
    * @param {File} file - Image file from file input
    * @param {string} folder - Optional subfolder
@@ -300,7 +334,7 @@ class SupabaseService {
     }
 
     try {
-      const bucket = localStorage.getItem('vt_supabase_bucket') || SUPABASE_CONFIG.bucketName || 'product-images';
+      const bucket = await this.getEffectiveBucket();
       const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
       const cleanFileName = file.name ? file.name.replace(/[^a-zA-Z0-9.-]/g, '_') : 'image';
       const fileName = `${folder}/${Date.now()}-${cleanFileName}`;
@@ -344,7 +378,7 @@ class SupabaseService {
     let storageOk = false;
     let details = [];
 
-    // Test Database 'products' table
+    // 1. Test Database 'products' table
     try {
       const { data, error } = await this.client.from('products').select('id').limit(1);
       if (error) {
@@ -357,15 +391,48 @@ class SupabaseService {
       details.push(`Database error: ${e.message}`);
     }
 
-    // Test Storage Bucket
+    // 2. Test Storage Bucket via listBuckets
     try {
-      const bucket = localStorage.getItem('vt_supabase_bucket') || 'product-images';
-      const { data, error } = await this.client.storage.getBucket(bucket);
-      if (error) {
-        details.push(`Storage Bucket Note: ${error.message} (Make sure '${bucket}' exists in Supabase Storage and is set to Public)`);
+      const { data: buckets, error: bErr } = await this.client.storage.listBuckets();
+      if (!bErr && Array.isArray(buckets)) {
+        const configured = (localStorage.getItem('vt_supabase_bucket') || SUPABASE_CONFIG.bucketName || 'product image').trim();
+        const normConfig = configured.toLowerCase().replace(/[\s_-]/g, '');
+
+        const match = buckets.find(b => 
+          b.id === configured || b.name === configured ||
+          (b.id || '').toLowerCase().replace(/[\s_-]/g, '') === normConfig ||
+          (b.name || '').toLowerCase().replace(/[\s_-]/g, '') === normConfig
+        );
+
+        if (match) {
+          storageOk = true;
+          localStorage.setItem('vt_supabase_bucket', match.id);
+          const bucketInput = document.getElementById('supabaseBucketInput');
+          if (bucketInput && bucketInput.value !== match.id) {
+            bucketInput.value = match.id;
+          }
+          if (match.public) {
+            details.push(`✅ Storage bucket '${match.name}' (ID: ${match.id}) is active and ready for uploads!`);
+          } else {
+            details.push(`⚠️ Storage bucket '${match.name}' found, but it is Private. In Supabase Storage, click 'Edit bucket' and toggle 'Public bucket' ON.`);
+          }
+        } else if (buckets.length > 0) {
+          const list = buckets.map(b => `'${b.name}' (ID: ${b.id})`).join(', ');
+          details.push(`Storage Note: Found bucket(s): ${list}. Auto-selected '${buckets[0].name}'.`);
+          localStorage.setItem('vt_supabase_bucket', buckets[0].id);
+          storageOk = true;
+        } else {
+          details.push(`Storage Note: No storage buckets found. Please create a public bucket named 'product image' in Supabase Storage.`);
+        }
       } else {
-        storageOk = true;
-        details.push(`✅ Storage bucket '${bucket}' is active and ready!`);
+        const bucket = (localStorage.getItem('vt_supabase_bucket') || 'product image').trim();
+        const { data, error } = await this.client.storage.getBucket(bucket);
+        if (!error) {
+          storageOk = true;
+          details.push(`✅ Storage bucket '${bucket}' is active!`);
+        } else {
+          details.push(`Storage Note: ${error.message}`);
+        }
       }
     } catch (e) {
       details.push(`Storage error: ${e.message}`);

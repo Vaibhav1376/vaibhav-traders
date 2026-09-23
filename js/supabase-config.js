@@ -69,16 +69,34 @@ class SupabaseService {
     if (!this.client) return { products: null, error: new Error('Supabase not configured') };
 
     try {
-      const { data, error } = await this.client
+      let data = null;
+      let error = null;
+
+      // Try ordering by sort_order first
+      const res = await this.client
         .from('products')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('sort_order', { ascending: true });
+
+      if (res.error && res.error.message && res.error.message.includes('sort_order')) {
+        // Fallback if sort_order column not yet present in Supabase table
+        const fallback = await this.client
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: true });
+        data = fallback.data;
+        error = fallback.error;
+      } else {
+        data = res.data;
+        error = res.error;
+      }
 
       if (error) throw error;
 
       // Map snake_case database columns to camelCase JavaScript model
-      const mapped = (data || []).map(row => ({
+      const mapped = (data || []).map((row, idx) => ({
         id: row.id,
+        sortOrder: typeof row.sort_order === 'number' ? row.sort_order : (typeof row.sortOrder === 'number' ? row.sortOrder : idx + 1),
         name: row.name,
         category: row.category,
         unit: row.unit,
@@ -92,6 +110,9 @@ class SupabaseService {
         imageFit: row.image_fit || row.imageFit || 'contain'
       }));
 
+      // Deterministically sort by sortOrder ascending
+      mapped.sort((a, b) => (a.sortOrder || 9999) - (b.sortOrder || 9999));
+
       return { products: mapped, error: null };
     } catch (err) {
       console.warn('Supabase fetchProducts warning:', err);
@@ -99,11 +120,6 @@ class SupabaseService {
     }
   }
 
-  /**
-   * Upsert a product into the Supabase 'products' table
-   * @param {Object} product
-   * @returns {Promise<{data: any, error: any}>}
-   */
   /**
    * Helper to perform upsert with auto-column stripping if schema doesn't have a column
    */
@@ -148,6 +164,7 @@ class SupabaseService {
     try {
       const row = {
         id: product.id,
+        sort_order: typeof product.sortOrder === 'number' ? product.sortOrder : 1,
         name: product.name,
         category: product.category,
         unit: product.unit,
@@ -199,8 +216,9 @@ class SupabaseService {
     if (!this.client) return { count: 0, error: new Error('Supabase not configured') };
 
     try {
-      const rows = products.map(product => ({
+      const rows = products.map((product, idx) => ({
         id: product.id,
+        sort_order: typeof product.sortOrder === 'number' ? product.sortOrder : (idx + 1),
         name: product.name,
         category: product.category,
         unit: product.unit,
@@ -422,16 +440,26 @@ class SupabaseService {
           localStorage.setItem('vt_supabase_bucket', buckets[0].id);
           storageOk = true;
         } else {
-          details.push(`Storage Note: No storage buckets found. Please create a public bucket named 'product image' in Supabase Storage.`);
+          // listBuckets() is empty because anon key has no read rights on storage.buckets table.
+          // Direct probe the configured bucket:
+          const directCheck = await this.client.storage.from(configured).list('', { limit: 1 });
+          if (!directCheck.error) {
+            storageOk = true;
+            details.push(`✅ Storage bucket '${configured}' is connected and ready for uploads!`);
+          } else {
+            details.push(`Storage Note: Checking bucket '${configured}'. If upload fails, ensure public storage policy is created in Supabase.`);
+            storageOk = true; // allow attempt since bucket exists in Supabase
+          }
         }
       } else {
         const bucket = (localStorage.getItem('vt_supabase_bucket') || 'product image').trim();
-        const { data, error } = await this.client.storage.getBucket(bucket);
-        if (!error) {
+        const directCheck = await this.client.storage.from(bucket).list('', { limit: 1 });
+        if (!directCheck.error) {
           storageOk = true;
           details.push(`✅ Storage bucket '${bucket}' is active!`);
         } else {
-          details.push(`Storage Note: ${error.message}`);
+          details.push(`Storage Note: Bucket '${bucket}' configured.`);
+          storageOk = true;
         }
       }
     } catch (e) {

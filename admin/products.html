@@ -96,6 +96,7 @@
           <table class="admin-table">
             <thead>
               <tr>
+                <th style="width: 105px; text-align: center;">Order</th>
                 <th style="width: 70px;">Photo</th>
                 <th>Material & Category</th>
                 <th>Supply Unit</th>
@@ -191,6 +192,13 @@
                   <option value="in-stock">In Stock (Available)</option>
                   <option value="low-stock">Inquire Stock (Custom Order)</option>
                 </select>
+              </div>
+
+              <!-- Sequence / Display Order Position -->
+              <div class="form-group">
+                <label class="form-label">Display Sequence / Rank #</label>
+                <input type="number" name="productSortOrder" id="productSortOrderInput" class="form-control" min="1" placeholder="e.g. 1 (First item on website)">
+                <small style="font-size: 0.75rem; color: var(--color-text-muted);">Position #1 appears at the very top of your live customer website catalog.</small>
               </div>
 
               <div class="form-group">

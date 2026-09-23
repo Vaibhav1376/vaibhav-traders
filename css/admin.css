@@ -344,3 +344,98 @@ body.admin-body,
   .admin-content { padding: var(--space-4); }
   .admin-topbar { padding: var(--space-4); }
 }
+
+/* Order & Sequence Controls */
+.order-control-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.order-drag-handle {
+  cursor: grab;
+  color: var(--color-text-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0.2rem;
+  user-select: none;
+  transition: color var(--transition-fast);
+}
+
+.order-drag-handle:hover {
+  color: var(--color-primary);
+}
+
+.order-drag-handle:active {
+  cursor: grabbing;
+}
+
+.order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+
+.order-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btn-order-move {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: 3px;
+  width: 20px;
+  height: 14px;
+  font-size: 8px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-order-move:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+  transform: scale(1.15);
+}
+
+.btn-order-move:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* Drag and Drop Visual Feedback */
+.admin-product-row {
+  transition: background-color var(--transition-fast);
+}
+
+.admin-product-row.is-dragging {
+  opacity: 0.4;
+  background-color: var(--color-surface-muted) !important;
+}
+
+.admin-product-row.drag-over-top td {
+  border-top: 3px solid var(--color-accent) !important;
+}
+
+.admin-product-row.drag-over-bottom td {
+  border-bottom: 3px solid var(--color-accent) !important;
+}
+

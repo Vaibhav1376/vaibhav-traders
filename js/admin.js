@@ -222,11 +222,11 @@ const VTAdmin = {
     const products = window.VTStore.getProducts();
 
     if (products.length === 0) {
-      table.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No products found. Click "Add Material" or reset defaults.</td></tr>`;
+      table.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding: 2rem;">No products found. Click "Add Material" or reset defaults.</td></tr>`;
       return;
     }
 
-    table.innerHTML = products.map(p => {
+    table.innerHTML = products.map((p, index) => {
       const isStock = p.stockStatus === 'in-stock';
       const stockBadge = isStock 
         ? `<button class="badge badge-success btn-toggle-stock" data-id="${p.id}" title="Click to toggle">In Stock</button>` 
@@ -236,7 +236,17 @@ const VTAdmin = {
       const imgSrc = window.VTStore ? window.VTStore.resolveImageUrl(p.image) : (p.image || defaultImg);
 
       return `
-        <tr>
+        <tr class="admin-product-row" draggable="true" data-id="${p.id}" data-index="${index}">
+          <td style="text-align: center; vertical-align: middle;">
+            <div class="order-control-wrap">
+              <span class="order-drag-handle" title="Drag to reorder">⠿</span>
+              <span class="order-badge">#${index + 1}</span>
+              <div class="order-btn-group">
+                <button type="button" class="btn-order-move btn-move-up" data-id="${p.id}" data-dir="up" title="Move Up (▲)" ${index === 0 ? 'disabled' : ''}>▲</button>
+                <button type="button" class="btn-order-move btn-move-down" data-id="${p.id}" data-dir="down" title="Move Down (▼)" ${index === products.length - 1 ? 'disabled' : ''}>▼</button>
+              </div>
+            </div>
+          </td>
           <td>
             <div class="admin-prod-thumb-wrapper">
               <img src="${imgSrc}" class="admin-prod-thumb" alt="${VTApp.escapeHtml(p.name)}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
@@ -261,6 +271,86 @@ const VTAdmin = {
         </tr>
       `;
     }).join('');
+
+    // Move Up / Move Down buttons
+    table.querySelectorAll('.btn-order-move').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const dir = btn.getAttribute('data-dir');
+        const prod = products.find(x => x.id === id);
+        const name = prod ? prod.name : 'Material';
+
+        const moved = window.VTStore.moveProduct(id, dir);
+        if (moved) {
+          VTApp.showToast(`Sequence changed: "${name}" moved ${dir === 'up' ? 'up ▲' : 'down ▼'}. Synced to live website!`, 'info');
+          this.renderProductsTable();
+        }
+      });
+    });
+
+    // Drag-and-drop row reordering
+    let draggedRow = null;
+    const rows = table.querySelectorAll('.admin-product-row');
+    rows.forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        draggedRow = row;
+        row.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.getAttribute('data-id'));
+      });
+
+      row.addEventListener('dragend', () => {
+        if (draggedRow) draggedRow.classList.remove('is-dragging');
+        rows.forEach(r => r.classList.remove('drag-over-top', 'drag-over-bottom'));
+        draggedRow = null;
+      });
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!draggedRow || draggedRow === row) return;
+
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+          row.classList.add('drag-over-top');
+          row.classList.remove('drag-over-bottom');
+        } else {
+          row.classList.add('drag-over-bottom');
+          row.classList.remove('drag-over-top');
+        }
+      });
+
+      row.addEventListener('dragleave', () => {
+        row.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        row.classList.remove('drag-over-top', 'drag-over-bottom');
+        if (!draggedRow || draggedRow === row) return;
+
+        const srcId = draggedRow.getAttribute('data-id');
+        const targetId = row.getAttribute('data-id');
+        const rect = row.getBoundingClientRect();
+        const dropBefore = e.clientY < (rect.top + rect.height / 2);
+
+        const currentProducts = window.VTStore.getProducts();
+        const orderedIds = currentProducts.map(p => p.id).filter(id => id !== srcId);
+        const targetIdx = orderedIds.indexOf(targetId);
+
+        if (dropBefore) {
+          orderedIds.splice(targetIdx, 0, srcId);
+        } else {
+          orderedIds.splice(targetIdx + 1, 0, srcId);
+        }
+
+        window.VTStore.reorderProducts(orderedIds);
+        VTApp.showToast('✅ Product sequence updated & synced to live website!', 'success');
+        this.renderProductsTable();
+      });
+    });
 
     // Toggle stock listeners
     table.querySelectorAll('.btn-toggle-stock').forEach(btn => {
@@ -460,6 +550,8 @@ const VTAdmin = {
         form.reset();
         document.getElementById('productIdField').value = '';
         document.getElementById('productModalTitle').textContent = 'Add Building Material to Catalog';
+        const orderInput = document.getElementById('productSortOrderInput');
+        if (orderInput) orderInput.value = window.VTStore.getProducts().length + 1;
         if (fitSelect) fitSelect.value = 'contain';
         updateThumbPreview('');
         updateLivePreview();
@@ -495,13 +587,17 @@ const VTAdmin = {
         const image = imgUrlInput ? imgUrlInput.value.trim() : '';
         const imageFit = fitSelect ? fitSelect.value : 'contain';
 
+        const sortOrderVal = form.productSortOrder ? parseInt(form.productSortOrder.value, 10) : NaN;
+        const targetOrder = (!isNaN(sortOrderVal) && sortOrderVal > 0) ? sortOrderVal : undefined;
+
         if (!name || !unit) {
           VTApp.showToast('Material Name and Unit are required.', 'error');
           return;
         }
 
-        window.VTStore.saveProduct({
+        const saved = window.VTStore.saveProduct({
           id: id || undefined,
+          sortOrder: targetOrder,
           name,
           category,
           unit,
@@ -512,6 +608,10 @@ const VTAdmin = {
           image: image || 'assets/images/ultratech-cement.jpg',
           imageFit
         });
+
+        if (id && targetOrder) {
+          window.VTStore.setProductOrder(id, targetOrder);
+        }
 
         modal.classList.remove('active');
         if (window.VTSupabase && window.VTSupabase.isConfigured()) {
@@ -541,6 +641,11 @@ const VTAdmin = {
     form.productWholesale.value = p.wholesalePrice;
     form.productStock.value = p.stockStatus;
     form.productDesc.value = p.description;
+
+    const orderInput = document.getElementById('productSortOrderInput');
+    if (orderInput) {
+      orderInput.value = (typeof p.sortOrder === 'number') ? p.sortOrder : (products.indexOf(p) + 1);
+    }
 
     const fitSelect = document.getElementById('productImageFitSelect');
     if (fitSelect) fitSelect.value = p.imageFit || 'contain';

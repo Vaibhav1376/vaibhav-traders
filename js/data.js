@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
 const DEFAULT_PRODUCTS = [
   {
     id: 'prod-1',
+    sortOrder: 1,
     name: 'UltraTech Cement (Super / Weather Plus)',
     category: 'cement',
     unit: 'Per Bag (50 Kg)',
@@ -31,6 +32,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-2',
+    sortOrder: 2,
     name: 'ACC Gold Water Shield Cement',
     category: 'cement',
     unit: 'Per Bag (50 Kg)',
@@ -45,6 +47,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-3',
+    sortOrder: 3,
     name: 'Fe 550D TMT Rebar (Tata / Jindal / Polad)',
     category: 'steel',
     unit: 'Per Ton / Per Kg (8mm - 32mm)',
@@ -59,6 +62,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-4',
+    sortOrder: 4,
     name: 'Washed River Sand & M-Sand (Plaster / Concrete)',
     category: 'sand-aggregate',
     unit: 'Per Brass / Truck Tipper Load',
@@ -73,6 +77,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-5',
+    sortOrder: 5,
     name: 'Black Basalt Crushed Aggregates (10mm, 20mm, 40mm Khadi)',
     category: 'sand-aggregate',
     unit: 'Per Brass / Dumper Load',
@@ -87,6 +92,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-6',
+    sortOrder: 6,
     name: 'First Class Kiln Burned Red Clay Bricks',
     category: 'bricks-blocks',
     unit: 'Per 1,000 Bricks / Tractor Load',
@@ -101,6 +107,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-7',
+    sortOrder: 7,
     name: 'AAC Lightweight Autoclaved Aerated Concrete Blocks',
     category: 'bricks-blocks',
     unit: 'Per Piece / Per Cubic Meter',
@@ -115,6 +122,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-8',
+    sortOrder: 8,
     name: 'Supreme / Astral Heavy Duty PVC & CPVC Pipes',
     category: 'plumbing-hardware',
     unit: 'Per Length / Bundle',
@@ -129,6 +137,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-9',
+    sortOrder: 9,
     name: 'Dr. Fixit Waterproofing & Asian Paints Dampproof',
     category: 'finishing-paints',
     unit: '1L, 5L, 20L Cans',
@@ -143,6 +152,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'prod-10',
+    sortOrder: 10,
     name: 'Binding Wire, Shuttering Nails & Construction Hardware',
     category: 'plumbing-hardware',
     unit: 'Per Bundle / Kg',
@@ -268,6 +278,11 @@ class DataStore {
               p.imageFit = 'contain';
               changed = true;
             }
+            if (p.sortOrder === undefined) {
+              const def = DEFAULT_PRODUCTS.find(dp => dp.id === p.id);
+              p.sortOrder = (def && typeof def.sortOrder === 'number') ? def.sortOrder : (index + 1);
+              changed = true;
+            }
             return p;
           });
           if (changed) {
@@ -369,7 +384,12 @@ class DataStore {
 
   getProducts() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS)) || DEFAULT_PRODUCTS;
+      const prods = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS)) || DEFAULT_PRODUCTS;
+      return prods.slice().sort((a, b) => {
+        const orderA = (typeof a.sortOrder === 'number') ? a.sortOrder : (typeof a.sort_order === 'number' ? a.sort_order : 9999);
+        const orderB = (typeof b.sortOrder === 'number') ? b.sortOrder : (typeof b.sort_order === 'number' ? b.sort_order : 9999);
+        return orderA - orderB;
+      });
     } catch (e) {
       return DEFAULT_PRODUCTS;
     }
@@ -386,8 +406,15 @@ class DataStore {
       }
     } else {
       product.id = 'prod-' + Date.now();
-      products.unshift(product);
+      product.sortOrder = typeof product.sortOrder === 'number' ? product.sortOrder : (products.length + 1);
+      products.push(product);
     }
+
+    // Ensure sortOrder is set cleanly for all products
+    products.forEach((p, i) => {
+      if (typeof p.sortOrder !== 'number') p.sortOrder = i + 1;
+    });
+
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
 
     // Asynchronously push to Supabase Cloud
@@ -400,9 +427,117 @@ class DataStore {
     return product;
   }
 
+  /**
+   * Move a product up or down in sequence and auto-sync with Supabase
+   * @param {string} productId
+   * @param {'up'|'down'} direction
+   * @returns {boolean}
+   */
+  moveProduct(productId, direction) {
+    const products = this.getProducts();
+    const idx = products.findIndex(p => p.id === productId);
+    if (idx === -1) return false;
+
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= products.length) return false;
+
+    // Swap positions
+    const temp = products[idx];
+    products[idx] = products[targetIdx];
+    products[targetIdx] = temp;
+
+    // Normalize sortOrder numbers (1, 2, 3...)
+    products.forEach((p, i) => {
+      p.sortOrder = i + 1;
+    });
+
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products } }));
+
+    // Asynchronously push all updated order indexes to Supabase
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.bulkSyncProducts(products).catch(err => {
+        console.warn('Background sequence cloud sync error:', err);
+      });
+    }
+
+    return true;
+  }
+
+  /**
+   * Directly assign a product to a specific 1-based sequence position
+   * @param {string} productId
+   * @param {number} newPosition
+   * @returns {boolean}
+   */
+  setProductOrder(productId, newPosition) {
+    const products = this.getProducts();
+    const idx = products.findIndex(p => p.id === productId);
+    if (idx === -1) return false;
+
+    const item = products.splice(idx, 1)[0];
+    const targetIdx = Math.max(0, Math.min(products.length, newPosition - 1));
+    products.splice(targetIdx, 0, item);
+
+    products.forEach((p, i) => {
+      p.sortOrder = i + 1;
+    });
+
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products } }));
+
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.bulkSyncProducts(products).catch(err => {
+        console.warn('Background sequence cloud sync error:', err);
+      });
+    }
+
+    return true;
+  }
+
+  /**
+   * Reorder products using an array of ordered product IDs (for Drag & Drop)
+   * @param {Array<string>} orderedIds
+   * @returns {boolean}
+   */
+  reorderProducts(orderedIds) {
+    const products = this.getProducts();
+    const map = new Map(products.map(p => [p.id, p]));
+    const reordered = [];
+
+    orderedIds.forEach(id => {
+      if (map.has(id)) {
+        reordered.push(map.get(id));
+        map.delete(id);
+      }
+    });
+
+    // Append any remainder
+    map.forEach(p => reordered.push(p));
+
+    reordered.forEach((p, i) => {
+      p.sortOrder = i + 1;
+    });
+
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(reordered));
+    window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products: reordered } }));
+
+    if (window.VTSupabase && window.VTSupabase.isConfigured()) {
+      window.VTSupabase.bulkSyncProducts(reordered).catch(err => {
+        console.warn('Background sequence cloud sync error:', err);
+      });
+    }
+
+    return true;
+  }
+
   deleteProduct(id) {
     let products = this.getProducts();
     products = products.filter(p => p.id !== id);
+    // Renumber remaining products
+    products.forEach((p, i) => {
+      p.sortOrder = i + 1;
+    });
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
 
     // Asynchronously delete from Supabase Cloud
@@ -416,8 +551,10 @@ class DataStore {
   }
 
   resetProducts() {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
-    return DEFAULT_PRODUCTS;
+    const fresh = DEFAULT_PRODUCTS.map((p, i) => ({ ...p, sortOrder: i + 1 }));
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh));
+    window.dispatchEvent(new CustomEvent('vt:catalog-synced', { detail: { products: fresh } }));
+    return fresh;
   }
 
   // -------------------------------------------------------------------------

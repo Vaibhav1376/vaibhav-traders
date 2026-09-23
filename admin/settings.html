@@ -215,6 +215,7 @@ create table if not exists products (
 );
 
 -- Ensure all columns exist even on pre-existing tables
+alter table products add column if not exists sort_order int default 0;
 alter table products add column if not exists updated_at timestamp with time zone default timezone('utc'::text, now());
 alter table products add column if not exists image_fit text default 'contain';
 
@@ -237,7 +238,11 @@ alter table site_settings enable row level security;
 create policy "Allow public read products" on products for select using (true);
 create policy "Allow public read settings" on site_settings for select using (true);
 create policy "Allow public write products" on products for all using (true) with check (true);
-create policy "Allow public write settings" on site_settings for all using (true) with check (true);</textarea>
+create policy "Allow public write settings" on site_settings for all using (true) with check (true);
+
+-- 4. Storage Bucket Public Upload Access (for 'product image' bucket)
+insert into storage.buckets (id, name, public) values ('product image', 'product image', true) on conflict (id) do update set public = true;
+create policy "Allow public upload product images" on storage.objects for all using ( bucket_id = 'product image' ) with check ( bucket_id = 'product image' );</textarea>
             </div>
           </div>
 

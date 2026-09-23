@@ -104,6 +104,44 @@ class SupabaseService {
    * @param {Object} product
    * @returns {Promise<{data: any, error: any}>}
    */
+  /**
+   * Helper to perform upsert with auto-column stripping if schema doesn't have a column
+   */
+  async _resilientUpsert(tableName, rows, onConflict = 'id', maxRetries = 6) {
+    let currentRows = Array.isArray(rows) ? rows.map(r => ({ ...r })) : [{ ...rows }];
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const { data, error } = await this.client
+        .from(tableName)
+        .upsert(currentRows, { onConflict });
+
+      if (!error) {
+        return { data, error: null };
+      }
+
+      // Check if error is about a missing column in schema cache
+      const match = error.message && error.message.match(/Could not find the '([^']+)' column/i);
+      if (match && match[1]) {
+        const missingCol = match[1];
+        console.warn(`Supabase schema note: '${missingCol}' column missing in '${tableName}', auto-adapting payload...`);
+        currentRows = currentRows.map(r => {
+          const copy = { ...r };
+          delete copy[missingCol];
+          return copy;
+        });
+      } else {
+        // Different error (e.g. RLS policy, network, etc.)
+        return { data: null, error };
+      }
+    }
+    return { data: null, error: new Error('Failed to adapt payload to table schema.') };
+  }
+
+  /**
+   * Upsert a product into the Supabase 'products' table
+   * @param {Object} product
+   * @returns {Promise<{data: any, error: any}>}
+   */
   async upsertProduct(product) {
     if (!this.client) return { data: null, error: new Error('Supabase not configured') };
 
@@ -120,16 +158,10 @@ class SupabaseService {
         description: product.description || '',
         icon: product.icon || (product.category ? product.category.split('-')[0] : 'box'),
         image: product.image || '',
-        image_fit: product.imageFit || 'contain',
-        updated_at: new Date().toISOString()
+        image_fit: product.imageFit || 'contain'
       };
 
-      const { data, error } = await this.client
-        .from('products')
-        .upsert(row, { onConflict: 'id' });
-
-      if (error) throw error;
-      return { data, error: null };
+      return await this._resilientUpsert('products', row, 'id');
     } catch (err) {
       console.error('Supabase upsertProduct error:', err);
       return { data: null, error: err };
@@ -179,14 +211,10 @@ class SupabaseService {
         description: product.description || '',
         icon: product.icon || (product.category ? product.category.split('-')[0] : 'box'),
         image: product.image || '',
-        image_fit: product.imageFit || 'contain',
-        updated_at: new Date().toISOString()
+        image_fit: product.imageFit || 'contain'
       }));
 
-      const { data, error } = await this.client
-        .from('products')
-        .upsert(rows, { onConflict: 'id' });
-
+      const { data, error } = await this._resilientUpsert('products', rows, 'id');
       if (error) throw error;
       return { count: rows.length, error: null };
     } catch (err) {
@@ -243,13 +271,9 @@ class SupabaseService {
         phone: settings.phone,
         address: settings.address,
         google_rating: settings.googleRating,
-        gst_number: settings.gstNumber,
-        updated_at: new Date().toISOString()
+        gst_number: settings.gstNumber
       };
-      const { error } = await this.client
-        .from('site_settings')
-        .upsert(row, { onConflict: 'id' });
-
+      const { error } = await this._resilientUpsert('site_settings', row, 'id');
       if (error) throw error;
       return { error: null };
     } catch (err) {

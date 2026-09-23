@@ -214,6 +214,10 @@ create table if not exists products (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+-- Ensure all columns exist even on pre-existing tables
+alter table products add column if not exists updated_at timestamp with time zone default timezone('utc'::text, now());
+alter table products add column if not exists image_fit text default 'contain';
+
 -- 2. Create Site Settings Table
 create table if not exists site_settings (
   id text primary key default 'current',

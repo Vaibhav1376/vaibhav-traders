@@ -8,7 +8,7 @@
 const SUPABASE_CONFIG = {
   // Configured Project Credentials (can also be configured in Admin > Settings)
   url: localStorage.getItem('vt_supabase_url') || 'https://usryzvjmruelbhepwtvc.supabase.co',
-  anonKey: localStorage.getItem('vt_supabase_anon_key') || '',
+  anonKey: localStorage.getItem('vt_supabase_anon_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzcnl6dmptcnVlbGJoZXB3dHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNzU0MTcsImV4cCI6MjEwNTY1MTQxN30.jWofRH1dTPyNDQBkLTxZPbY2B9fmoSamIoEvNbRRdvE',
   bucketName: localStorage.getItem('vt_supabase_bucket') || 'product image'
 };
 

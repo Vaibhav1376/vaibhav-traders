@@ -38,6 +38,7 @@ const VTApp = {
     const toggleBtn = document.querySelector('.mobile-nav-toggle');
     const drawer = document.querySelector('.mobile-drawer');
     const overlay = document.querySelector('.mobile-overlay');
+    const closeBtn = document.querySelector('.mobile-drawer-close');
 
     if (!toggleBtn || !drawer) return;
 
@@ -50,6 +51,7 @@ const VTApp = {
     };
 
     toggleBtn.addEventListener('click', () => toggle());
+    if (closeBtn) closeBtn.addEventListener('click', () => toggle(false));
     if (overlay) overlay.addEventListener('click', () => toggle(false));
 
     // Close on navigation click inside drawer
@@ -120,7 +122,7 @@ const VTApp = {
     const pageSegment = path.split('/').pop() || ''; // e.g. "products", "products.html", "about", ""
     const isHomePage = (pageSegment === '' || pageSegment === 'index' || pageSegment === 'index.html');
 
-    const navLinks = document.querySelectorAll('.nav-link');
+    const navLinks = document.querySelectorAll('.nav-link, .drawer-nav-link');
 
     navLinks.forEach(link => {
       const href = link.getAttribute('href');

@@ -135,7 +135,7 @@ const VTProducts = {
               </div>
             </div>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: auto;">
+            <div class="product-card-footer">
               ${statusBadge}
               <button class="btn btn-primary btn-sm btn-quote-action" data-id="${product.id}">
                 Request Quote &rarr;

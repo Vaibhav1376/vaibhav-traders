@@ -192,10 +192,30 @@ ul, ol {
 }
 
 @media (max-width: 640px) {
-  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .container, .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; gap: var(--space-4); }
   .section {
-    padding-top: var(--space-12);
-    padding-bottom: var(--space-12);
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  .section-sm {
+    padding-top: 2.25rem !important;
+    padding-bottom: 2.25rem !important;
+  }
+  .section-header {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  .section-title {
+    font-size: 1.65rem;
+    line-height: 1.25;
+  }
+  .section-desc {
+    font-size: 0.925rem;
+    line-height: 1.55;
   }
 }
 

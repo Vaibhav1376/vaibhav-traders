@@ -111,7 +111,7 @@
 
   <!-- Add/Edit Product Modal -->
   <div id="productFormModal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content modal-content-wide">
       <div class="modal-header">
         <h3 id="productModalTitle" style="font-size: 1.25rem;">Add Building Material</h3>
         <button id="closeProductModal" style="font-size: 1.5rem; line-height: 1; color: var(--color-text-muted);">&times;</button>
@@ -119,66 +119,125 @@
       <form id="adminProductForm">
         <input type="hidden" id="productIdField" value="">
         <div class="modal-body">
-          <!-- Product Photo Upload / URL -->
-          <div class="form-group">
-            <label class="form-label">Material Photo / Image</label>
-            <div style="display: flex; gap: 0.85rem; align-items: center; margin-bottom: 0.5rem;">
-              <div id="productImagePreviewContainer" class="admin-prod-thumb-wrapper" style="width: 68px; height: 68px; border: 2px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted);">
-                <img id="productImagePreview" src="" alt="Preview" class="admin-prod-thumb" style="display: none;">
-                <span id="productImagePlaceholderIcon" style="font-size: 1.6rem; color: var(--color-text-muted);">📷</span>
-              </div>
-              <div style="flex-grow: 1;">
-                <input type="url" id="productImageUrl" name="productImage" class="form-control" placeholder="Paste image web link (e.g. https://...)" style="margin-bottom: 0.4rem; font-size: 0.85rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                  <label class="btn btn-outline btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.3rem 0.65rem;">
-                    📁 Upload from Device
-                    <input type="file" id="productImageFileInput" accept="image/*" style="display: none;">
-                  </label>
-                  <button type="button" id="btnClearProductImage" class="btn btn-sm" style="font-size: 0.75rem; color: var(--color-danger); padding: 0.3rem 0.5rem; background: none; border: none; cursor: pointer; display: none;">✕ Remove</button>
+          <div class="product-modal-grid">
+            <!-- Left Side: Form Controls -->
+            <div class="product-form-fields">
+              <!-- Product Photo Upload / URL -->
+              <div class="form-group">
+                <label class="form-label">Material Photo / Image</label>
+                <div style="display: flex; gap: 0.85rem; align-items: center; margin-bottom: 0.5rem;">
+                  <div id="productImagePreviewContainer" class="admin-prod-thumb-wrapper" style="width: 68px; height: 68px; border: 2px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted);">
+                    <img id="productImagePreview" src="" alt="Preview" class="admin-prod-thumb" style="display: none;">
+                    <span id="productImagePlaceholderIcon" style="font-size: 1.6rem; color: var(--color-text-muted);">📷</span>
+                  </div>
+                  <div style="flex-grow: 1;">
+                    <input type="url" id="productImageUrl" name="productImage" class="form-control" placeholder="Paste image web link (e.g. https://...)" style="margin-bottom: 0.4rem; font-size: 0.85rem;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                      <label class="btn btn-outline btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.3rem 0.65rem;">
+                        📁 Upload from Device
+                        <input type="file" id="productImageFileInput" accept="image/*" style="display: none;">
+                      </label>
+                      <button type="button" id="btnClearProductImage" class="btn btn-sm" style="font-size: 0.75rem; color: var(--color-danger); padding: 0.3rem 0.5rem; background: none; border: none; cursor: pointer; display: none;">✕ Remove</button>
+                    </div>
+                  </div>
                 </div>
+                <small style="font-size: 0.75rem; color: var(--color-text-muted);">Upload photo or paste URL. Stored via Supabase / Local Data.</small>
+              </div>
+
+              <!-- Image Fit Selector -->
+              <div class="form-group">
+                <label class="form-label">Photo Framing / Fit Mode</label>
+                <select name="productImageFit" id="productImageFitSelect" class="form-control">
+                  <option value="contain">Fit Full Bag / Item (Contain - Recommended)</option>
+                  <option value="cover">Fill Container Edge-to-Edge (Cover)</option>
+                </select>
+                <small style="font-size: 0.75rem; color: var(--color-text-muted);">Use "Fit Full Bag" so UltraTech cement sacks and branded materials don't get cut off!</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Material Name *</label>
+                <input type="text" name="productName" id="productNameInput" class="form-control" placeholder="e.g. UltraTech Cement (Super / Weather Plus)" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Category *</label>
+                <select name="productCategory" id="productCategorySelect" class="form-control">
+                  <option value="cement">Cement</option>
+                  <option value="steel">TMT Steel</option>
+                  <option value="sand-aggregate">Sand & Aggregates</option>
+                  <option value="bricks-blocks">Bricks & Blocks</option>
+                  <option value="plumbing-hardware">Plumbing & Hardware</option>
+                  <option value="finishing-paints">Paints & Finishing</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Supply Unit *</label>
+                <input type="text" name="productUnit" id="productUnitInput" class="form-control" placeholder="e.g. Per Bag (50 Kg) / Per Brass / Per Ton" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Wholesale Rate Description</label>
+                <input type="text" name="productWholesale" id="productWholesaleInput" class="form-control" placeholder="e.g. Live Mill Rate / ₹380 Bulk / Direct Tipper">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Stock Status</label>
+                <select name="productStock" id="productStockSelect" class="form-control">
+                  <option value="in-stock">In Stock (Available)</option>
+                  <option value="low-stock">Inquire Stock (Custom Order)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="productDesc" id="productDescInput" class="form-control" placeholder="Specifications, brand highlights, or delivery requirements..."></textarea>
               </div>
             </div>
-            <small style="font-size: 0.75rem; color: var(--color-text-muted);">Upload a real photo from your computer/mobile or paste an image link.</small>
-          </div>
 
-          <div class="form-group">
-            <label class="form-label">Material Name *</label>
-            <input type="text" name="productName" class="form-control" placeholder="e.g. UltraTech Cement 53 Grade" required>
-          </div>
+            <!-- Right Side: Live Customer Website Preview -->
+            <div class="live-preview-panel">
+              <div class="live-preview-header">
+                <span class="live-preview-dot"></span>
+                <span>Live Customer Website Preview</span>
+              </div>
+              <div class="live-preview-card-wrap">
+                <div class="card product-card" style="box-shadow: var(--shadow-lg); pointer-events: none; border-radius: var(--radius-xl);">
+                  <div class="product-card-media" id="previewCardMedia" style="height: 220px; background: #f8fafc; border-bottom: 1px solid var(--color-border);">
+                    <img id="previewCardImg" src="" alt="Product" class="product-card-img" style="display: none; object-fit: contain;">
+                    <div id="previewCardIcon" class="product-media-icon" style="display: flex;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg>
+                    </div>
+                    <div class="product-card-badge">
+                      <span class="badge badge-wholesale">Wholesale + Retail</span>
+                    </div>
+                  </div>
+                  <div class="product-card-content" style="padding: 1.25rem;">
+                    <span id="previewCardCategory" class="product-category-label">CEMENT</span>
+                    <h3 id="previewCardTitle" class="product-title" style="font-size: 1.05rem; margin-bottom: 0.35rem;">UltraTech Cement</h3>
+                    <p id="previewCardDesc" class="product-desc" style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Engineered for high early strength and dampness resistance.</p>
+                    
+                    <div class="product-meta-row" style="margin-bottom: 0.75rem;">
+                      <div class="product-unit" style="font-size: 0.8rem;">
+                        <strong>Unit:</strong> <span id="previewCardUnit">Per Bag (50 Kg)</span>
+                      </div>
+                      <div class="product-pricing">
+                        <div class="product-price-label" style="font-size: 0.7rem;">Wholesale Rate</div>
+                        <div id="previewCardPrice" class="product-price-value text-accent" style="font-size: 0.95rem;">₹370 - ₹395</div>
+                      </div>
+                    </div>
 
-          <div class="form-group">
-            <label class="form-label">Category *</label>
-            <select name="productCategory" class="form-control">
-              <option value="cement">Cement</option>
-              <option value="steel">TMT Steel</option>
-              <option value="sand-aggregate">Sand & Aggregates</option>
-              <option value="bricks-blocks">Bricks & Blocks</option>
-              <option value="plumbing-hardware">Plumbing & Hardware</option>
-              <option value="finishing-paints">Paints & Finishing</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Supply Unit *</label>
-            <input type="text" name="productUnit" class="form-control" placeholder="e.g. Per Bag (50 Kg) / Per Brass / Per Ton" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Wholesale Rate Description</label>
-            <input type="text" name="productWholesale" class="form-control" placeholder="e.g. Live Mill Rate / ₹380 Bulk / Direct Tipper">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Stock Status</label>
-            <select name="productStock" class="form-control">
-              <option value="in-stock">In Stock (Available)</option>
-              <option value="low-stock">Inquire Stock (Custom Order)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <textarea name="productDesc" class="form-control" placeholder="Specifications, brand highlights, or delivery requirements..."></textarea>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: auto;">
+                      <span id="previewCardStockBadge" class="badge badge-success">● In Stock</span>
+                      <span class="btn btn-primary btn-sm" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">Request Quote &rarr;</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.85rem; text-align: center; margin-bottom: 0;">
+                ✨ Real-time preview: What you see here is exactly how customers see it on your live website!
+              </p>
+            </div>
           </div>
         </div>
         <div class="modal-footer">

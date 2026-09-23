@@ -256,8 +256,73 @@ const VTAdmin = {
     const imgPreview = document.getElementById('productImagePreview');
     const imgIcon = document.getElementById('productImagePlaceholderIcon');
     const clearImgBtn = document.getElementById('btnClearProductImage');
+    const fitSelect = document.getElementById('productImageFitSelect');
 
-    const updatePreview = (url) => {
+    // Live Preview elements
+    const prevImg = document.getElementById('previewCardImg');
+    const prevIcon = document.getElementById('previewCardIcon');
+    const prevMedia = document.getElementById('previewCardMedia');
+    const prevTitle = document.getElementById('previewCardTitle');
+    const prevCat = document.getElementById('previewCardCategory');
+    const prevDesc = document.getElementById('previewCardDesc');
+    const prevUnit = document.getElementById('previewCardUnit');
+    const prevPrice = document.getElementById('previewCardPrice');
+    const prevStock = document.getElementById('previewCardStockBadge');
+
+    const updateLivePreview = () => {
+      const name = (document.getElementById('productNameInput') ? document.getElementById('productNameInput').value.trim() : '') || 'UltraTech Cement 53 Grade';
+      const cat = (document.getElementById('productCategorySelect') ? document.getElementById('productCategorySelect').value : 'cement') || 'cement';
+      const unit = (document.getElementById('productUnitInput') ? document.getElementById('productUnitInput').value.trim() : '') || 'Per Bag (50 Kg)';
+      const price = (document.getElementById('productWholesaleInput') ? document.getElementById('productWholesaleInput').value.trim() : '') || '₹370 - ₹395';
+      const stock = (document.getElementById('productStockSelect') ? document.getElementById('productStockSelect').value : 'in-stock');
+      const desc = (document.getElementById('productDescInput') ? document.getElementById('productDescInput').value.trim() : '') || 'High early strength, crack prevention, and dampness resistance.';
+      const fit = (fitSelect ? fitSelect.value : 'contain');
+      const imgUrl = (imgUrlInput ? imgUrlInput.value.trim() : '');
+
+      if (prevTitle) prevTitle.textContent = name;
+      if (prevCat) prevCat.textContent = cat.replace('-', ' & ').toUpperCase();
+      if (prevUnit) prevUnit.textContent = unit;
+      if (prevPrice) prevPrice.textContent = price;
+      if (prevDesc) prevDesc.textContent = desc;
+
+      if (prevStock) {
+        if (stock === 'in-stock') {
+          prevStock.className = 'badge badge-success';
+          prevStock.textContent = '● In Stock';
+        } else {
+          prevStock.className = 'badge badge-warning';
+          prevStock.textContent = '● Inquire Stock';
+        }
+      }
+
+      if (imgUrl) {
+        if (prevImg) {
+          prevImg.src = imgUrl;
+          prevImg.style.display = 'block';
+          prevImg.style.objectFit = fit;
+        }
+        if (prevIcon) prevIcon.style.display = 'none';
+        if (prevMedia) {
+          prevMedia.style.background = (fit === 'cover' ? '#0f172a' : '#f8fafc');
+          prevMedia.style.padding = (fit === 'cover' ? '0' : '1rem');
+        }
+      } else {
+        if (prevImg) {
+          prevImg.src = '';
+          prevImg.style.display = 'none';
+        }
+        if (prevIcon) {
+          prevIcon.style.display = 'flex';
+          prevIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg>`;
+        }
+        if (prevMedia) {
+          prevMedia.style.background = '#f8fafc';
+          prevMedia.style.padding = '1rem';
+        }
+      }
+    };
+
+    const updateThumbPreview = (url) => {
       if (url && url.trim()) {
         if (imgPreview) {
           imgPreview.src = url.trim();
@@ -273,11 +338,22 @@ const VTAdmin = {
         if (imgIcon) imgIcon.style.display = 'block';
         if (clearImgBtn) clearImgBtn.style.display = 'none';
       }
+      updateLivePreview();
     };
 
     if (imgUrlInput) {
-      imgUrlInput.addEventListener('input', (e) => updatePreview(e.target.value));
+      imgUrlInput.addEventListener('input', (e) => updateThumbPreview(e.target.value));
     }
+
+    // Attach live preview updates to all form inputs
+    const formInputIds = ['productNameInput', 'productCategorySelect', 'productUnitInput', 'productWholesaleInput', 'productStockSelect', 'productDescInput', 'productImageFitSelect'];
+    formInputIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', updateLivePreview);
+        el.addEventListener('change', updateLivePreview);
+      }
+    });
 
     if (imgFileInput) {
       imgFileInput.addEventListener('change', async (e) => {
@@ -290,7 +366,7 @@ const VTAdmin = {
           const { publicUrl, error } = await window.VTSupabase.uploadProductImage(file);
           if (publicUrl) {
             if (imgUrlInput) imgUrlInput.value = publicUrl;
-            updatePreview(publicUrl);
+            updateThumbPreview(publicUrl);
             VTApp.showToast('Photo uploaded to Supabase Storage successfully!', 'success');
             return;
           } else {
@@ -307,7 +383,7 @@ const VTAdmin = {
         reader.onload = (loadEvent) => {
           const dataUrl = loadEvent.target.result;
           if (imgUrlInput) imgUrlInput.value = dataUrl;
-          updatePreview(dataUrl);
+          updateThumbPreview(dataUrl);
           if (!window.VTSupabase || !window.VTSupabase.isConfigured()) {
             VTApp.showToast('Photo loaded locally. Configure Supabase in Settings for permanent cloud hosting.', 'info');
           }
@@ -320,7 +396,7 @@ const VTAdmin = {
       clearImgBtn.addEventListener('click', () => {
         if (imgUrlInput) imgUrlInput.value = '';
         if (imgFileInput) imgFileInput.value = '';
-        updatePreview('');
+        updateThumbPreview('');
       });
     }
 
@@ -329,7 +405,9 @@ const VTAdmin = {
         form.reset();
         document.getElementById('productIdField').value = '';
         document.getElementById('productModalTitle').textContent = 'Add Building Material to Catalog';
-        updatePreview('');
+        if (fitSelect) fitSelect.value = 'contain';
+        updateThumbPreview('');
+        updateLivePreview();
         modal.classList.add('active');
       });
     }
@@ -360,6 +438,7 @@ const VTAdmin = {
         const stockStatus = form.productStock.value;
         const description = form.productDesc.value.trim();
         const image = imgUrlInput ? imgUrlInput.value.trim() : '';
+        const imageFit = fitSelect ? fitSelect.value : 'contain';
 
         if (!name || !unit) {
           VTApp.showToast('Material Name and Unit are required.', 'error');
@@ -375,7 +454,8 @@ const VTAdmin = {
           stockStatus,
           description: description || 'High grade construction material supplied by Vaibhav Traders.',
           icon: category.split('-')[0],
-          image: image || 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80'
+          image: image || 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80',
+          imageFit
         });
 
         modal.classList.remove('active');
@@ -403,6 +483,9 @@ const VTAdmin = {
     form.productStock.value = p.stockStatus;
     form.productDesc.value = p.description;
 
+    const fitSelect = document.getElementById('productImageFitSelect');
+    if (fitSelect) fitSelect.value = p.imageFit || 'contain';
+
     const imgUrlInput = document.getElementById('productImageUrl');
     const imgPreview = document.getElementById('productImagePreview');
     const imgIcon = document.getElementById('productImagePlaceholderIcon');
@@ -423,6 +506,55 @@ const VTAdmin = {
       }
       if (imgIcon) imgIcon.style.display = 'block';
       if (clearImgBtn) clearImgBtn.style.display = 'none';
+    }
+
+    // Trigger full live card preview update for this material
+    const prevImg = document.getElementById('previewCardImg');
+    const prevIcon = document.getElementById('previewCardIcon');
+    const prevMedia = document.getElementById('previewCardMedia');
+    const prevTitle = document.getElementById('previewCardTitle');
+    const prevCat = document.getElementById('previewCardCategory');
+    const prevDesc = document.getElementById('previewCardDesc');
+    const prevUnit = document.getElementById('previewCardUnit');
+    const prevPrice = document.getElementById('previewCardPrice');
+    const prevStock = document.getElementById('previewCardStockBadge');
+
+    if (prevTitle) prevTitle.textContent = p.name;
+    if (prevCat) prevCat.textContent = p.category.replace('-', ' & ').toUpperCase();
+    if (prevUnit) prevUnit.textContent = p.unit;
+    if (prevPrice) prevPrice.textContent = p.wholesalePrice;
+    if (prevDesc) prevDesc.textContent = p.description;
+    if (prevStock) {
+      if (p.stockStatus === 'in-stock') {
+        prevStock.className = 'badge badge-success';
+        prevStock.textContent = '● In Stock';
+      } else {
+        prevStock.className = 'badge badge-warning';
+        prevStock.textContent = '● Inquire Stock';
+      }
+    }
+    const fit = p.imageFit || 'contain';
+    if (p.image) {
+      if (prevImg) {
+        prevImg.src = p.image;
+        prevImg.style.display = 'block';
+        prevImg.style.objectFit = fit;
+      }
+      if (prevIcon) prevIcon.style.display = 'none';
+      if (prevMedia) {
+        prevMedia.style.background = (fit === 'cover' ? '#0f172a' : '#f8fafc');
+        prevMedia.style.padding = (fit === 'cover' ? '0' : '1rem');
+      }
+    } else {
+      if (prevImg) {
+        prevImg.src = '';
+        prevImg.style.display = 'none';
+      }
+      if (prevIcon) prevIcon.style.display = 'flex';
+      if (prevMedia) {
+        prevMedia.style.background = '#f8fafc';
+        prevMedia.style.padding = '1rem';
+      }
     }
 
     modal.classList.add('active');

@@ -248,6 +248,10 @@ class DataStore {
                 changed = true;
               }
             }
+            if (!p.imageFit) {
+              p.imageFit = 'contain';
+              changed = true;
+            }
             return p;
           });
           if (changed) {

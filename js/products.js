@@ -103,11 +103,15 @@ const VTProducts = {
         ? `<span class="badge badge-success">● In Stock</span>` 
         : `<span class="badge badge-warning">● Inquire Stock</span>`;
 
+      const isCover = (product.imageFit === 'cover');
+      const fitClass = isCover ? 'img-cover' : '';
+      const mediaStyle = isCover ? 'background: #0f172a; padding: 0;' : 'background: #f8fafc; padding: var(--space-3);';
+
       return `
         <div class="card product-card" data-product-id="${product.id}">
-          <div class="product-card-media">
+          <div class="product-card-media" style="${mediaStyle}">
             ${product.image ? `
-              <img src="${product.image}" alt="${VTApp.escapeHtml(product.name)}" class="product-card-img" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <img src="${product.image}" alt="${VTApp.escapeHtml(product.name)}" class="product-card-img ${fitClass}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
             ` : ''}
             <div class="product-media-icon" style="${product.image ? 'display: none;' : 'display: flex;'}">
               ${this.getIconSvg(product.icon || product.category)}

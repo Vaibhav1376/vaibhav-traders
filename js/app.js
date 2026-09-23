@@ -115,20 +115,28 @@ const VTApp = {
 
   // Active Link Highlight
   highlightActiveNav() {
-    const currentPath = window.location.pathname.toLowerCase();
+    // Normalize path by removing trailing slash, leading slash, and query params
+    let path = window.location.pathname.toLowerCase().split('?')[0].replace(/\/+$/, '');
+    const pageSegment = path.split('/').pop() || ''; // e.g. "products", "products.html", "about", ""
+    const isHomePage = (pageSegment === '' || pageSegment === 'index' || pageSegment === 'index.html');
+
     const navLinks = document.querySelectorAll('.nav-link');
 
     navLinks.forEach(link => {
       const href = link.getAttribute('href');
       if (!href) return;
-      const cleanHref = href.toLowerCase();
+      // Normalize href: "products.html" -> "products", "index.html" -> "index"
+      const cleanHref = href.toLowerCase().replace(/^\.\//, '').replace('.html', '').replace(/^\//, '');
 
-      if (
-        (currentPath.endsWith('/') || currentPath.endsWith('index.html')) &&
-        (cleanHref === 'index.html' || cleanHref === './' || cleanHref === '/')
-      ) {
-        link.classList.add('active');
-      } else if (cleanHref !== 'index.html' && currentPath.includes(cleanHref)) {
+      let isActive = false;
+      if (isHomePage) {
+        isActive = (cleanHref === 'index' || cleanHref === '' || cleanHref === './');
+      } else {
+        const normalizedPage = pageSegment.replace('.html', '');
+        isActive = (cleanHref === normalizedPage);
+      }
+
+      if (isActive) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
